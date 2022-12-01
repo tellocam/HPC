@@ -1,0 +1,85 @@
+\section{Task1 : Inclusive and Exclusie Scan (1/4 Points)}
+\subsection{Describe the Workings of the Kernels (1 Point)}
+% wtf is actually going on:
+% scan kernel 1: 256x256
+% scan within each block and calculate/reduce there
+% calculate workperthread and use according indices of the vector
+% do the reduction:
+% we do inclusive reduction -> then have to use...
+% fancy ternary oparator to write 0 first -> threadIdx == 0 -> write 0, all thread write values, except last one
+% write back result in vector
+ 
+\subsubsection*{ workings of \fun{scan\_kernel\_1()}}
+\begin{algorithm}
+	\setstretch{1.5}
+	\renewcommand{\thealgorithm}{}
+	\caption{\fun{scan\_kernel\_1()} - Scan within each block} 
+	\begin{algorithmic}[1]
+	\State Call \fun{scan\_kernel\_1} \Comment{with \fun{<<<256,256>>>}}
+	\State Kernel initiates \fun{shared\_buffer[256]} and \fun{my\_value}
+    \State Calculate \fun{work\_per\_thread} from \fun{N} \Comment{Yields indices of vector chunk interfaces}
+    \State Inc. scan for single vector chunk within \fun{shared\_buffer[256]} \Comment{concurrent for chunks}
+    \State All threads write \fun{my\_value} except last one \Comment{\fun{(conditon) ? exp\_1 : exp\_2}}
+    \State Write result to vector \fun{Y}
+	\end{algorithmic}
+\end{algorithm}
+
+\subsubsection*{ workings of \fun{scan\_kernel\_2()}}
+% scan kernel 2: (1x 256)
+% add all the results of the kernels
+% 1 block, 1 thread per block from (1)
+% reduction over all the kernels
+% write to output array accordingly again, s.t. we have exclusive scan
+% -> 0 from threadIdx == 0, else write data at threadIdx-1
+
+\begin{algorithm}
+	\setstretch{1.5}
+	\renewcommand{\thealgorithm}{}
+	\caption{\fun{scan\_kernel\_2()} - Add results from Kernels} 
+	\begin{algorithmic}[1]
+	\State Call \fun{scan\_kernel\_2} \Comment{with \fun{<<<1,256>>>}}
+	\State Reduction over all Kernels
+	\State Write to output array \Comment{Exclusive Scan manner:}
+	\State \fun{carries[threadIdx.x] = (threadIdx.x > 0) ? shared\_buffer[threadIdx.x - 1] : 0;}
+	\end{algorithmic}
+\end{algorithm}
+
+
+
+\subsubsection*{workings of \fun{scan\_kernel\_3()}}
+% scan kernel 3: (256x256)
+% shared variable offset
+% all the 0 threads of all blocks from (1):
+% set offset as carries value from blockIdx
+% add the offset to each value between blockstart and blockstop
+%  we added all numbers together except the last one of the last thread
+
+\begin{algorithm}
+	\setstretch{1.5}
+	\renewcommand{\thealgorithm}{}
+
+	\caption{\fun{scan\_kernel\_3()}} 
+	\begin{algorithmic}[1]
+	\State call \fun{scan\_kernel\_3} \Comment{with \fun{<<<256,256>>>}}
+	\State Kernel initiates \fun{shared\_offset}
+    \State Calculate \fun{work\_per\_thread} from \fun{N} \Comment{Yields indices of vector chunk interfaces}
+	\State $0^{\mathrm{th}}$ thread of every block set \fun{offset} as \fun{carries} from \fun{blockIdx.x}
+	\State Add \fun{offset} to all values between \fun{blockstart} and \fun{blockstop}:
+	\State \fun{Y[i] += shared\_offset;}
+
+	\end{algorithmic}
+\end{algorithm}
+
+\pagebreak
+\subsection{Provide an Implementation of Inclusive Scan (1 Point)}
+
+
+\pagebreak
+\subsection{Modify Exclusive Scan Code to Convert to Inclusive scan (1 Point)}
+
+
+\pagebreak
+\subsection{Compare Performances (1 Point)}
+
+
+\pagebreak

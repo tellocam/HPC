@@ -1,0 +1,139 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% PREAMBLE! :-)
+
+
+\documentclass[a4paper, 10pt]{article}
+
+%%% packages - input should be path where your packages.tex file is saved.
+\input{content/01_packages}
+
+%%% Settings!
+\input{content/02_settings}
+
+%%% macros - where u define ur macros and newcommands!
+\input{content/03_macros}
+
+%%% the bibliohraphy! the settings to the bibliography are changed in the packages.tex file, where the bibtex package is loaded!
+\addbibresource{content/04_bibliography.bib}
+
+\begin{document}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+          
+
+\input{content/05_titlepage} 
+
+%\blankpage
+
+% this is to remove the first paragraph sentence indentation! if you want indentation, set the second input to the desired indendation value.
+\setlength{\parindent}{0pt}
+
+% this file is loaded, to include PDF's such as declaration of intent for theses, abstracts and summaries in other languages.
+\input{content/06_before_TOC}
+
+
+
+%%% If your TOC is too large for one page, you can distribute it over 2 pages and comment this /blankpage command below! To better control the distribution of the content of the table of content, use the geometry settings and adjust the top and bottom margin for the table of content in the next part of this code.
+
+%\blankpage
+
+
+
+%%% Here u define the TOC, a newgeometry command is used to let you design your own TOC margins. just comment out the \newgeometry and the \restoregeometry
+%%% command to force the same margins as the rest of the document to the TOC
+
+\pagebreak
+\thispagestyle{empty}
+\newgeometry{top=2.25cm, bottom=2.25cm}
+{\sffamily\tableofcontents}
+\thispagestyle{empty}
+\restoregeometry
+\pagebreak
+
+\pagenumbering{arabic}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%% This is a first surrogate chapter to intuitively show you how and where to include new chapters!asd
+%\input{content/07_todo}
+%\pagebreak
+
+\input{content/08_chapter_1}
+%\pagebreak
+
+\input{content/09_chapter_2}
+
+%\pagebreak
+
+%\input{content/10_chapter_3}
+
+%\pagebreak
+
+%\input{content/11_chapter_4}
+
+%\pagebreak
+
+%\input{content/12_chapter_5}
+
+%\pagebreak
+
+%\input{content/13_chapter_6}
+
+%\pagebreak
+
+%\input{content/14_chapter_7}
+
+%\pagebreak
+
+%\input{content/15_chapter_8_conclusion}
+
+%\pagebreak
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% During the document writing process, this single .tex file is used to let dasdyou write down a little to do list, just comment it out when the paper is done!
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Bibliography printing at this point! 
+\printbibliography
+
+%%% This is a hardcoded string to enforce it in the table of contents, if you want your "references" string in the TOC to be named differently, such as bibliography or so on, just change the third input to this command below to your desired references naming that should appear in the TOC
+%\addcontentsline{toc}{section}{References}
+
+
+\pagebreak
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%% This is where the appendix .tex file is included, the settings to the appendix are changed in the settings.tex file
+%\input{content/appendices}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\end{document}
+

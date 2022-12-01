@@ -1,0 +1,219 @@
+\begin{appendix}
+\addappheadtotoc
+\section{CPP CUDA Code - Strided and Offset Memory Access - Task 1a}
+\label{app_1a}
+
+\begin{lstlisting}[language=C++, title=C++ Listing for EX1 a)]
+#include <stdio.h>
+#include "timer.hpp"
+#include <algorithm>
+#include <vector>
+
+__global__ void addVec_kth(double *x, double *y, double *z, int N, int k) {
+	unsigned int total_threads = blockDim.x * gridDim.x;
+	unsigned int global_tid = blockIdx.x * blockDim.x + threadIdx.x;
+	if (k==0) {
+		k = 1;
+	}
+	for (unsigned int i = global_tid; i<N/k; i += total_threads) {
+		z[i*k] = x[i*k] + y[i*k];
+	}
+}
+
+// findMedian function for any vector lenghts, source geeksforgeeks.com
+double findMedian(std::vector<double> a,
+                  int n)
+{
+    if (n % 2 == 0) {
+        std::nth_element(a.begin(),
+                    a.begin() + n / 2,
+                    a.end());
+        std::nth_element(a.begin(),
+                    a.begin() + (n - 1) / 2,
+                    a.end());
+        return (double)(a[(n - 1) / 2]
+                        + a[n / 2])
+               / 2.0;
+    }
+    else {
+        std::nth_element(a.begin(),
+                    a.begin() + n / 2,
+                    a.end());
+        return (double)a[n / 2];
+    }
+}
+
+int main(void)
+{
+	// Task 1a//
+	double *x, *y, *z, *gpu_x, *gpu_y, *gpu_z;
+	double eff_BW;
+	Timer timer;
+	int N = pow(10.0, 8.0);
+	std::vector<int> k_values(64, 0);
+	for(int i = 0; i<64; i++){
+		k_values[i] = i;
+	}
+	std::vector<double> exec_timings = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	x = (double*)malloc(N*sizeof(double));
+	y = (double*)malloc(N*sizeof(double));
+	z = (double*)malloc(N*sizeof(double));
+	for (int i = 0; i < N; i++) {
+		x[i] = (double)(i);
+		y[i] = (double)(N-i-1);
+	}
+	cudaMalloc(&gpu_x, N*sizeof(double)); 
+	cudaMalloc(&gpu_y, N*sizeof(double));
+	cudaMalloc(&gpu_z, N*sizeof(double));
+	cudaMemcpy(gpu_x, x, N*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(gpu_y, y, N*sizeof(double), cudaMemcpyHostToDevice);
+	cudaMemcpy(z, gpu_z, N*sizeof(double), cudaMemcpyDeviceToHost);
+
+	for (int i = 0; i < 64; i++) {
+		for (int m = 0; m < 11; m++) {
+			timer.reset();
+			addVec_kth<<<256, 256>>>(gpu_x, gpu_y, gpu_z, N, k_values[i]);
+			cudaDeviceSynchronize();
+			exec_timings[m] = timer.get();
+		}
+		if (k_values[i]==0) {
+			eff_BW = 3 * N * sizeof(double) * pow(10,-9) / findMedian(exec_timings, 10);
+		}
+		else{
+			eff_BW = 3 * floor((N/k_values[i])) * sizeof(double) * pow(10, -9) / findMedian(exec_timings, 10);
+		}
+		printf("%d,%g\n", k_values[i], eff_BW);
+	}
+
+	cudaFree(gpu_x);
+	cudaFree(gpu_y);
+	cudaFree(gpu_z);
+	free(x);
+	free(y);
+	free(z);
+\end{lstlisting}
+\pagebreak
+
+\section{CPP CUDA Code - Offset Memory Access - Task 1b}
+The code for the Offset Memory Access partial exercise is the same as for the
+Strided Memory Access partial exercise, except the \texttt{\_\_global\_\_} part where
+the offset is defined and the calculation of the effective bandwidth, where one can now
+ also omit the case distinction for k=0.
+
+\null
+
+\label{app_1b}
+\begin{lstlisting}[language=C++, title=C++ Listing for EX1 b)]
+__global__ void addVec_kth(double *x, double *y, double *z, int N, int k) {
+	unsigned int total_threads = blockDim.x * gridDim.x;
+	unsigned int global_tid = blockIdx.x * blockDim.x + threadIdx.x;
+	if (k==0) {
+		k = 1;
+	}
+	for (unsigned int i = global_tid; i<N-k; i += total_threads) {
+		z[i+k] = x[i+k] + y[i+k];
+	}
+}
+
+.
+.
+.
+
+eff_BW = 3 * floor((N - k_values[i])) * sizeof(double) * pow(10, -9) / findMedian(exec_timings, 10);
+
+.
+.
+.
+
+\end{lstlisting}
+
+\pagebreak
+
+\section{CPP CUDA Code - Dense Matrix Transpose - Task 2b}
+\label{app_2b}
+
+\begin{lstlisting}[language=C++, title=C++ Listing for EX2 b and c]
+#include <stdio.h>
+#include <iostream>
+#include "timer.hpp"
+#include "cuda_errchk.hpp"   // for error checking of CUDA calls
+
+__global__
+void transpose(double *A, double *B, int N)
+{
+  int t_idx = blockIdx.x*blockDim.x + threadIdx.x;
+  int row_idx = t_idx / N;
+  int col_idx = t_idx % N;
+  
+  if (row_idx < N && col_idx < N) B[row_idx * N + col_idx] = A[col_idx * N + row_idx];
+}
+
+
+void print_A(double *A, int N)
+{
+  for (int i = 0; i < N; i++) {
+    for (int j = 0; j < N; ++j) {
+      std::cout << A[i * N + j] << ", ";
+    }
+    std::cout << std::endl;
+  }
+}
+
+int main(void)
+{
+  int N = 10;
+
+  double *A, *cuda_A, *B, *cuda_B;
+  Timer timer;
+
+  // Allocate host memory and initialize
+  A = (double*)malloc(N*N*sizeof(double));
+  B = (double*)malloc(N*N*sizeof(double));
+  
+  for (int i = 0; i < N*N; i++) {
+    A[i] = i;
+  }
+
+  print_A(A, N);
+
+
+  // Allocate device memory and copy host data over
+  CUDA_ERRCHK(cudaMalloc(&cuda_A, N*N*sizeof(double))); 
+  CUDA_ERRCHK(cudaMalloc(&cuda_B, N*N*sizeof(double))); 
+
+  // copy data over
+  CUDA_ERRCHK(cudaMemcpy(cuda_A, A, N*N*sizeof(double), cudaMemcpyHostToDevice));
+
+  // wait for previous operations to finish, then start timings
+  CUDA_ERRCHK(cudaDeviceSynchronize());
+  timer.reset();
+
+  // Perform the transpose operation
+  transpose<<<(N*N+255)/256, 256>>>(cuda_A, cuda_B, N);
+
+  // wait for kernel to finish, then print elapsed time
+  CUDA_ERRCHK(cudaDeviceSynchronize());
+  double elapsed = timer.get();
+  std::cout << std::endl << "Time for transpose: " << elapsed << std::endl;
+  std::cout << "Effective bandwidth: " << (2*N*N*sizeof(double)) / elapsed * 1e-9 << " GB/sec" << std::endl;
+  std::cout << std::endl;
+
+  // copy data back (implicit synchronization point)
+  CUDA_ERRCHK(cudaMemcpy(B, cuda_B, N*N*sizeof(double), cudaMemcpyDeviceToHost));
+
+  print_A(B, N);
+
+  cudaFree(cuda_A);
+  cudaFree(cuda_B);
+  free(A);
+  free(B);
+
+  CUDA_ERRCHK(cudaDeviceReset());  // for CUDA leak checker to work
+
+  return EXIT_SUCCESS;
+}
+\end{lstlisting}
+
+
+\end{appendix}
+

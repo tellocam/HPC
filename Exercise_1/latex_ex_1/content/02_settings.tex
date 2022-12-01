@@ -1,0 +1,112 @@
+%% settings
+%change relevant macros like title, names etc.
+
+\newcommand{\firstauthorfirstname}{Camilo }
+\newcommand{\firstauthorlastname}{Tello Fachin }
+
+\newcommand{\secondauthorfirstname}{Second }
+\newcommand{\secondauthorlastname}{Author }
+
+\newcommand{\doctitle}{Exercise 6}
+
+\makeindex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% set the margins of the document, single first input generates evenly spaced margins of that value
+\usepackage[margin=2.5cm]{geometry}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[utf8]{inputenc}
+% u need this one to compile ä ö ü while babel-package is disabled!(english document)!!
+% https://www.namsu.de/Extra/pakete/Inputenc.html
+
+%\usepackage[ngerman]{babel}
+% uncomment this package to have all the generated text lik TOC and TOC-APP in german
+% IF U UNCOMMENT THIS, PUT THE UTF8 INPUTENC PACKAGE IN COMMENT
+% https://www.namsu.de/Extra/pakete/German.html
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% header and footer settings
+% to look up stuff on it go visit this one:
+% https://en.wikibooks.org/wiki/LaTeX/Customizing_Page_Headers_and_Footers
+
+\usepackage{fancyhdr}
+\setlength{\headheight}{22.25pt}
+
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+
+\pagestyle{fancy}
+
+
+% header inputs
+\lhead[even output]{CSMCA}
+\chead[even output]{Exercise 6}
+\rhead[even output]{\includegraphics[width=2.5cm]{figures/uni_header}}
+
+
+%footer inputs
+\lfoot[even output]{CSE - WS22}
+\cfoot[even output]{Page  \thepage}
+\rfoot[even output]{\today}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%settings for PDF metadata, available if rightclick on pdf in adobe and chose properties!
+
+\hypersetup{pdfinfo={
+Title={\doctitle},
+Subject={Computational Science on Many Core Architectures},
+Author={Camilo Tello Fachin},
+Keywords={C++, }{Cuda, }{Technical University Vienna, }{Winter Semester 22, }
+{MSc Computational Science and Engineering}
+}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% This is the bibliography package,
+\usepackage[
+backend=bibtex,
+style=ieee,
+sorting=ynt,
+backref=false,
+hyperref=true
+]{biblatex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% This is an important setting which lets u control the spacing between lines! Just comment/uncomment the desired ones!
+
+
+%\singlespacing
+
+\onehalfspacing
+
+%\doublespacing
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% custom commands
+
+\newcommand{\var}[1]{\texttt{#1}}
+\newcommand{\fun}[1]{\texttt{#1}}
+\newcommand{\obj}[1]{\texttt{#1}}
+
+\newtheorem*{theorem*}{Theorem}
+\newtheorem*{proof*}{Proof}

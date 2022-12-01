@@ -1,0 +1,73 @@
+\section{Chapter 3}
+\subsection{Proof and Theorem Environment Example}
+
+As explained in the introduction, the existence of the shape derivative needs to be shown.
+The perturbations of the shape $\Omega$ are described by the transformation: $\Omega_t := (Id + tX )(\Omega)$ 
+For small perturbations and $t > 0$, the shape derivative is \cite{fully_semi_paper_sturm}
+
+\begin{equation}\label{shape_derrivative_t_limit}
+	DJ(\Omega)(X) := \left(\frac{\partial}{\partial t}J(\Omega_t)\right)\bigg\rvert_{t=0} = \lim_{t \to 0} \frac{J(\Omega_t)-J(\Omega)}{t}.
+\end{equation}
+This notion of the shape derivative is used in this chapter in the context of differentiability. The functional $J(\Omega)$ that returns a scalar quantity 
+represetative of the energy dissipation is shown here where : is the Frobenius product and $\mathrm{D} \mathbf{u}$ is the Jacobi matrix of $\mathbf{u}$.
+\begin{align}\label{energy_dissipation_equation}
+	J(\Omega) = \frac{1}{2} \int_{\Omega} \mathrm{D} \mathbf{u} : \mathrm{D} \mathbf{u} \, \mathrm{dx}.
+\end{align}
+Sturm et. al. \cite{nearly_conformal_paper} proposed the following shape derivative. \\
+\begin{theorem*}
+The Shape Derivative of $J$ at $\Omega$ in direction $ X \in [C^{0,1}(\bar{\Omega})]^2 $ is given by:
+\begin{align}\label{shape_derivative_S1}
+	\mathrm{d}J(\Omega)(X) &= \int_{\Omega} \mathrm{S}_1 : \mathrm{D}X \, \mathrm{dx}, \\
+	\mathrm{S}_1 &= \left( \frac{1}{2}\mathrm{D} \mathbf{u} : \mathrm{D} \mathbf{u} - p \, \mathrm{div}(\mathbf{u}) \right)
+	\mathrm{I}_2 + \mathrm{D} \mathbf{u}^{\top}p - \mathrm{D} \mathbf{u}^{\top} \mathrm{D} \mathbf{u}.
+\end{align}
+where $(\mathbf{u},p)$ solve (\ref*{weak_stokes_PDE_product})
+\end{theorem*}
+\begin{proof*}
+let $X \in [C^{0,1}(\bar{\Omega})]^2$ with $X \rvert_{\Gamma_{\infty}} = 0$ be a given vectorfield. \\
+Set $\mathrm{T}_t(.) := \mathrm{id} + tX $ , with $t \in \mathbb{R}$ and $\Omega_t := \mathrm{T}_t(\Omega)$, where 
+$(\mathbf{u}_t, p_t)$ solve (\ref{weak_stokes_PDE_product}) and $\Omega$ is replaced by $\Omega_t$ s.t. \\
+$p_t \in \mathrm{L}^2(\Omega_t), \int_{\Omega_t} p_t \, \mathrm{dx} = 0 $ and $\mathrm{u}_t \in [H^1(\Omega_t)]^2$. Then there holds 
+\begin{align}
+	\int_{\Omega_t} \mathrm{D} \mathbf{u}_t : \mathrm{D} \mathbf{\mathbf{v}} + \mathrm{div}(\mathbf{v}) \, p_t + \mathrm{div}(\mathbf{u}_t) \, q \, dx = \, 0 \quad \forall (v,q)
+    \in  [H^1_0(\Omega_t)]^d \times L^2(\Omega_t).
+\end{align}
+Introduction of change of variables shows that $(\mathbf{u}^t, p^t) := (\mathbf{u}_t \circ \mathrm{T}_t, p_t \circ \mathrm{T}_t)$ satisfy
+\begin{equation}
+\begin{aligned}\label{trafo_weak_stokes}
+	&\int_\Omega \mathrm{det}(\mathrm{DT}_t)
+	\left( \mathrm{DT}_t^{-1} \mathrm{D}\mathbf{u}^t:\mathrm{DT}_t^{-1} \mathrm{D}\mathbf{v} -p\, \mathrm{tr}(\mathrm{D}\mathbf{v}\mathrm{DT}_t^{-1})  +
+	q \, \mathrm{tr}(\mathrm{D}\mathbf{u}\mathrm{DT}_t^{-1}) \right) \mathrm{dx}, \\
+	& \quad \quad \quad \quad \quad \quad \quad \quad \quad \ \forall (v,q) \in [H^1(\Omega)]^2 \times L^2(\Omega),
+\end{aligned}
+\end{equation}
+Used in equation (\ref{trafo_weak_stokes})
+\begin{align*}
+	\mathrm{D}\mathbf{v}\circ\mathrm{T}_t &= \mathrm{D}(\mathbf{v}\circ\mathrm{T}_t), \\
+	\mathrm{div}(\mathbf{v}) &= \mathrm{tr} \left( \mathrm{D}(\mathbf{v} \circ \mathrm{T}_t)(\mathrm{DT}_t^{-1}) \right).
+\end{align*}
+
+\vfill
+
+\pagebreak
+
+The functional $J(\Omega,\mathbf{u})$ is now reduced to the functional $J(\Omega)$, since the change of the quantities $(\mathbf{u},p)$
+is taken into account by the transformation theorem. The minimum of (\ref{energy_dissipation_equation})
+satisfies the saddlepoint problem (\ref{trafo_weak_stokes}). It can be obtained with the Lagrange Multiplier method, 
+see Faustmann \cite{lecture_notes_faustmann_numPDE}. The corresponding Lagrangian which can be used to minimize (\ref{energy_dissipation_equation})
+is
+\begin{equation}\label{parametrized_lagrangian}
+ \begin{aligned}
+	\mathcal{L}(t,\mathbf{v}, q) = \frac{1}{2}& \int_{\Omega} \mathrm{det}(\mathrm{DT}_t) \mathrm{D} \mathbf{v}(\mathrm{DT}_t)^{-1} :
+	\mathrm{D} \mathbf{v}(\mathrm{DT}_t)^{-1} \, \mathrm{dx}, \\
+	&- \int_{\Omega}\mathrm{det}(\mathrm{DT}_t)q \, \mathrm{tr} \left( \mathrm{D}\mathbf{v}(\mathrm{DT}_t)^{-1} \right).
+\end{aligned}
+\end{equation}
+To find the shape derivative, one can now derive this parametrized Lagrangian, for details on the derivation of parametrized Lagrangians, 
+see K. Ito et. al. \cite{lagrangian_derivative}. With the derivative of the Lagrangian obtained, it holds true that
+\begin{align}
+	\mathrm{d}J(\Omega)(X) =\ \frac{\mathrm{d}}{\mathrm{d}t} \mathcal{L}(t, \mathbf{u}^t, 0)\big\rvert_{t=0}  =
+	\frac{\partial}{\partial t}\mathcal{L}(0,\mathbf{u},p) = \int_{\Omega} \mathrm{S}_1 : \mathrm{D}X \, \mathrm{dx}.
+\end{align}
+\qed
+\end{proof*}
