@@ -1,11 +1,60 @@
 \section{Exercise 1 - Closed Form Expressions}
-\subsection{$\sum_1^2$}
-\subsection{$\sum_1^2$}
-\subsection{$\sum_1^2$}
-\subsection{$\sum_1^2$}
+\subsection{$\sum_{i=0}^d k^i \quad \mathrm{for } \, k>0$ (Ex1.1)}
+\begin{equation}
+\begin{aligned}
+    \sum_{i=0}^d k^i &= \sum_{i=0}^d k^i \\
+    \sum_{i=0}^d k^i - k \sum_{i=0}^d k^i &= \sum_{i=0}^d k^i - k \sum_{i=0}^d k^i \\
+    \sum_{i=0}^d k^i - k \sum_{i=0}^d k^i &= \sum_{i=0}^d k^i - \sum_{i=1}^{d+1} k^i \\
+    \sum_{i=0}^d k^i \, (1-k) &= 1 - k^{d+1}\\
+    \sum_{i=0}^d k^i   &=  \frac{k^{d+1} - 1}{k-1}
+    \label{closedForm_Ex1.1}
+\end{aligned}
+\end{equation}
+
+\subsection{$\sum_{i=1}^d ik^i \quad \mathrm{for } \, k>0$ (Ex1.4)}
+\begin{equation}
+\begin{aligned}
+    \sum_{i=1}^d ik^i &= \sum_{i=0}^d ik^i = 
+    \sum_{i=0}^d k \frac{\mathrm{d}}{\mathrm{d}k}k^i =
+    k \frac{\mathrm{d}}{\mathrm{d}k} \overbrace{\sum_{i=0}^d k^i}^{\text{use (\ref{closedForm_Ex1.1})}} \\
+    \sum_{i=1}^d ik^i &= k \frac{\mathrm{d}}{\mathrm{d}k} \frac{1 - k^{d+1}}{1-k} = 
+    \frac{d  k^{d+2} - (d+1)k^{d+1} + k}{(1-k)^2}
+    \label{closedForm_Ex1.4}
+\end{aligned}
+\end{equation}
+
+\subsection{$\sum_{i=1}^d i2^{d-i}$ (Ex1.3)}
+\begin{equation}
+    \begin{aligned}
+        \sum_{i=1}^d i2^{d-i} &, \quad \text{use k instead of 2} \\
+        \sum_{i=1}^d ik^{d-i} &= \sum_{i=0}^d dk^{d-i} - \sum_{i=0}^d (d-i)k^{d-i} \\
+        &= d\underbrace{\sum_{j=0}^d k^{j}}_{\text{use } (\ref{closedForm_Ex1.1})} - 
+        \underbrace{\sum_{j=0}^d jk^{j}}_{\text{use } (\ref{closedForm_Ex1.4})} \quad \text{with } j := d-1 \\
+        &= \frac{d(k^{d+1} - 1)}{k-1} - \frac{d  k^{d+2} - (d+1)k^{d+1} + k}{(1-k)^2} \quad \text{set $k$ back to 2} \\
+        &= d2^{d+1} - d - d2^{d+2} + d2^{d+1} + 2^{d+1} - 2 \\
+        \sum_{i=1}^d i2^{d-i} &= 2^{d+1} -2 - d
+        \label{closedForm_Ex1.3}
+    \end{aligned}
+    \end{equation}
+
+\subsection{$\sum_{i=1}^d i2^i$}
+
+\begin{equation}
+    \begin{aligned}
+        \sum_{i=1}^d i2^i = d  2^{d+2} - (d+1)2^{d+1} + 2 \quad \text{with use of (\ref{closedForm_Ex1.4})}
+    \end{aligned}
+\end{equation}
+
+\pagebreak
+
+
+
+
 
 \section{Exercise 2 - Graph Tree's with Canonical Numbering}
 \subsection{$T^d_k$ with $k=3$ and $d=3$}
+
+
 \subsection{$B^d_k$ with $k=3$ and $d=4$}
 
 \section{Exercise 3 - Planar Graph $H_d$}
