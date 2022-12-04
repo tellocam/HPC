@@ -38,7 +38,9 @@ uint yarg32(uint num)
 // A Four-bit-at-once variant changes a binary number (abcd)2 to (abcd)2 ^ (00ab)2, then to (abcd)2 ^ (00ab)2 ^ (0abc)2 ^ (000a)2.
 
 int main()
+
 {
+    
     // printf("\n%u\n", gray(3));
     // printf("\n%u\n", yarg(0b111));
 
@@ -74,9 +76,9 @@ int main()
             printf("ERROR yarg()");
             break;
         }
-
         old = ans;
+    
     }
-
+    printf("Exercise 1.4 done\n");
     return 0;
 }
