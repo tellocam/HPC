@@ -31,7 +31,7 @@ uint yarg32(uint num)
 
 int main()
 {
-    int d = 20;
+    int d = 16;
 
     uint old = gray(0);
 

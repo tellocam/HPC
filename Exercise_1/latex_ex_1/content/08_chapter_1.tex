@@ -48,11 +48,12 @@
 \pagebreak
 
 \section{Exercise 2 - Graph Tree's with Canonical Numbering}
+Plots of the Graph Tree's with Canonical Numbering done with the Python library \texttt{networkx}.
 \subsection{$T^d_k$ with $k=3$ and $d=3$}
 
 \begin{figure}[h]
     \begin{center}
-        \includegraphics[width=\linewidth]{figures/Ex1_2_a.pdf}
+        \includegraphics[width=.9\linewidth]{figures/Ex1_2_a.pdf}
         \caption{Fixed-degree k-ary heigh $d$ tree $T^d_k$ with $k=3$ and $d=3$}
     \end{center}
 \end{figure}
@@ -62,7 +63,7 @@
 
 \begin{figure}[h]
     \begin{center}
-        \includegraphics[width=\linewidth]{figures/Ex1_2_b.pdf}
+        \includegraphics[width=0.9\linewidth]{figures/Ex1_2_b.pdf}
         \caption{Complete heigh $d$ k-nomial tree $B^d_k$ with $k=3$ and $d=4$}
     \end{center}
 \end{figure}
@@ -100,15 +101,10 @@ The Gray code algorithms 2 and 3 from the HPC script are implemented in C and sh
 the console output \texttt{yarg and gray did not throw errors - Ex1.4 done :-)}.
 
 \begin{lstlisting}[language=C, title=C Language Listing for EX1.4 ]
-#include <stdio.h>
-#include <math.h>
-typedef unsigned int uint;
-uint gray(uint num)
-{
+uint gray(uint num){
     return num ^ (num >> 1); 
 }
-uint yarg(uint num)s
-{
+uint yarg(uint num)s{
     uint mask = num;
     while (mask)
     { 
@@ -117,8 +113,7 @@ uint yarg(uint num)s
     }
     return num;
 }
-uint yarg32(uint num)
-{
+uint yarg32(uint num){
     num ^= num >> 16;
     num ^= num >> 8;
     num ^= num >> 4;
@@ -126,8 +121,7 @@ uint yarg32(uint num)
     num ^= num >> 1;
     return num;
 }
-int main()
-{
+int main(){
     int d = 20;
     uint old = gray(0);
     for (int j = 1; j < pow(2, d); j++)
@@ -135,21 +129,17 @@ int main()
         uint ans = gray(j);
         uint diff = old ^ ans;
         int check = 0;
-
         for (int k = 0; k < d; k++)
         {
-            if (diff == (1 << k))
-            {
+            if (diff == (1 << k)){
                 check++;
             }
         }
-        if (check != 1)
-        {
+        if (check != 1){
             printf("gray() error");
             break;
         }
-        if (yarg(ans) != j)
-        {
+        if (yarg(ans) != j){
             printf("yarg() error");
             break;
         }
@@ -159,3 +149,5 @@ int main()
     return 0;
 }
 \end{lstlisting}
+
+\pagebreak
