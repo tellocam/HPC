@@ -36,8 +36,50 @@ typedef double tuwtype_t;
 
 int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int rank, int comm)
 {
-    
-
+    tuwtype_t *tmpbuf = (tuwtype_t *)malloc(blockSize * sizeof(tuwtype_t));
+    tuwtype_t tmp;
+    if (rank == 0)
+    {
+        for (int b = 0; b < count; b++)
+        {
+            MPI_Recv(tmpbuf,blockSize, MPI_DOUBLE, MPI_ANY_SOURCE, 0, comm, MPI_STATUS_IGNORE);
+            tmp = tmpbuf[0];
+            for(int i = 1; i < blockSize; i++) {
+                tmp = tmpbuf[i] > tmp ? tmpbuf[i] : tmp;
+            }
+            recvbuf[b] = tmp > recvbuf[b] ? tmp : recvbuf[b];
+        }
+    }
+    else if (rank == size -1){
+        for (int b = 0; b < count; b++)
+        {
+            MPI_Send(sendbuf, blockSize, MPI_DOUBLE, 0, 0 ,comm);
+        }
+    }
+    else 
+    {
+        MPI_Recv(tmpbuf,blockSize, MPI_DOUBLE, rank - 1, 0, comm, MPI_STATUS_IGNORE );
+        tmp = tmpbuf[0];
+        for(int i = 1; i < blockSize; i++) {
+            tmp = tmpbuf[i] > tmp ? tmpbuf[i] : tmp;
+        }
+        recvbuf[0] = tmp > recvbuf[0] ? tmp : recvbuf[0];
+        for (int b = 1; b < count; b++)
+        {
+            MPI_Sendrecv(sendbuf + b-1, blockSize, MPI_DOUBLE, rank + 1, 0, tmpbuf,blockSize, MPI_DOUBLE, rank - 1, 0, comm, MPI_STATUS_IGNORE);
+            tmp = tmpbuf[0];
+            for(int i = 1; i < blockSize; i++) {
+              tmp = tmpbuf[i] > tmp ? tmpbuf[i] : tmp;
+            }
+            recvbuf[b] = tmp > recvbuf[b] ? tmp : recvbuf[b];
+        }
+        MPI_Send(sendbuf + count-1, blockSize, MPI_DOUBLE, rank + 1, 0 ,comm);
+    }
+    printf("at bcast%d\n",rank);
+    for(int i = 0; i < count; i++) {
+        printf("%f",recvbuf[i]);
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Pipelined Bcast [traeff_lecturenotes]
     if (rank == 0)
     {
