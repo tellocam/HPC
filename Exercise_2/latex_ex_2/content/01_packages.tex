@@ -1,0 +1,200 @@
+%% packages
+
+\usepackage{setspace}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{sectsty}
+\sectionfont{\sffamily\Large}
+\subsectionfont{\sffamily}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[titles]{tocloft}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% This is a package to use UTF8 CSV files as input and directly convert them to latex tables.
+\usepackage{csvsimple}
+%https://texblog.org/2012/05/30/generate-latex-tables-from-csv-files-excel/
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[version=4]{mhchem}
+% package for using chemical equations and fonts 
+% https://mirror.kumi.systems/ctan/macros/latex/contrib/mhchem/mhchem.pdf
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{xparse}
+% high level user interface package, use with caution
+% https://mirror.easyname.at/ctan/macros/latex/contrib/l3packages/xparse.pdf
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{makeidx}
+\usepackage{pdfpages}
+\usepackage{lastpage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% Package to control inclusion and exclusion of specific entry in the table of contents.
+%%% https://mirror.foobar.to/CTAN/macros/latex/contrib/tocbibind/tocbibind.pdf
+\usepackage[nottoc,notlot,notlof]{tocbibind}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{bigstrut}
+% needed for crazy table commands, its cool trust me!
+% https://anorien.csc.warwick.ac.uk/mirrors/CTAN/macros/latex/contrib/multirow/multirow.pdf
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{graphicx} 								
+% Required for the inclusion of images
+% https://de.overleaf.com/learn/latex/Inserting_Images
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{amsmath} 								
+% Required for some math elements 
+% https://www.namsu.de/Extra/pakete/amsmath/Amsmath.html
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{amssymb}
+% required for some more crazy math elements, checks mal ab!
+% http://milde.users.sourceforge.net/LUCR/Math/mathpackages/amssymb-symbols.pdf
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\usepackage{kbordermatrix} 	
+% some special matrix-commands						
+% http://www.hss.caltech.edu/~kcb/TeX/kbordermatrix.sty
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{multicol}								
+% multicolumn-commands stuffs
+% https://de.overleaf.com/learn/latex/Multiple_columns
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{color}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\definecolor{darkblue}{rgb}{0.0,0.0,0.6}
+\definecolor{cyan}{rgb}{0.0,0.6,0.6}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% package to more precisely wrap your document around ur figure!
+% https://de.overleaf.com/learn/latex/wrapping_text_around_figures
+\usepackage{wrapfig}								
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% the package for bold math symbol commands!
+% https://anorien.csc.warwick.ac.uk/mirrors/CTAN/macros/latex/required/tools/bm.pdf
+\usepackage{bm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% subcaption package dependant on caption package (self-explanatory)
+% https://www.namsu.de/Extra/pakete/Subcaption.html
+
+\usepackage{caption}
+\usepackage{subcaption}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%package for appendix control
+% https://mirror.easyname.at/ctan/macros/latex/contrib/appendix/appendix.pdf
+\usepackage[toc,page]{appendix}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% This is the listings package to make code appear like actual code!
+% https://mirror.foobar.to/CTAN/macros/latex/contrib/listings/listings.pdf
+\usepackage{listings}{
+ \lstset{frame=tb,
+  basicstyle=\fontsize{8}{10}\selectfont\sffamily,
+  frame=single,	 
+  language=Python,
+  breaklines=true,
+  showstringspaces=false,
+  columns=flexible,
+  numbers=left,
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  tabsize=2
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% this package for more elaborate appendix commands!
+% http://mirror.ox.ac.uk/sites/ctan.org/macros/latex/contrib/appendix/appendix.pdf
+\usepackage[toc,page]{appendix}
+%\renewcommand{\appendixpagename}{\appendixname}
+%\renewcommand{\appendixtocname}{\appendixname}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% this is the hyperlink references package! To make stuff in your text clickable and send you to the right page, URL's, E-mails etc..
+% http://mirror.ox.ac.uk/sites/ctan.org/macros/latex/contrib/hyperref/doc/manual.pdf
+\usepackage[
+    bookmarks,
+    bookmarksopen=true,
+    colorlinks=true,			% diese Farbdefinitionen zeichnen Links im PDF farblich aus
+    linkcolor=black, 			% einfache interne Verknüpfungen
+    anchorcolor=black,			% Ankertext
+    citecolor=black, 			% Verweise auf Literaturverzeichniseinträge im Text
+    filecolor=magenta, 			% Verknüpfungen, die lokale Dateien öffnen
+    menucolor=red, 				% Acrobat-Menüpunkte
+    urlcolor=blue,				% URL color of course :P
+    plainpages=false,		 	% zur korrekten Erstellung der Bookmarks
+    pdfpagelabels, 				% zur korrekten Erstellung der Bookmarks
+    hypertexnames=true, 		% zur korrekten Erstellung der Bookmarks
+    %linktocpage 				% Seitenzahlen anstatt Text im Inhaltsverzeichnis verlinken
+]{hyperref}
+
+\usepackage{tcolorbox}
+%Fancy boxes around text!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{amsthm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
