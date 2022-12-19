@@ -31,6 +31,7 @@
 typedef double tuwtype_t;
 
 #define FLIP(_fac, _mul1, _mul2) (_fac = ((_fac == _mul1) ? (_mul2) : (_mul1)))
+
 #define blockSize 1
 
 
