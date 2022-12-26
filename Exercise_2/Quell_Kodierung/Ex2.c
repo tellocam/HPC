@@ -32,70 +32,108 @@ typedef double tuwtype_t;
 
 #define FLIP(_fac, _mul1, _mul2) (_fac = ((_fac == _mul1) ? (_mul2) : (_mul1)))
 
-#define blockSize 1
+#define blockSize 4
+
+double maxFun(tuwtype_t* buff){
+    tuwtype_t tmp = buff[0];
+    for(int i = 1; i < blockSize; i++) {
+        tmp = buff[i] > tmp ? buff[i] : tmp;
+    }
+    return tmp;
+}
 
 // Apparently we do bcast of maximum.
-int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int rank, int comm)
+int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int rank)
 {
+    int trunc_chunk_idx = floor(count/blockSize)*blockSize; // index of first truncated chunk.. yes funny.
     tuwtype_t *tmpbuf = (tuwtype_t *)malloc(blockSize * sizeof(tuwtype_t));
+    tuwtype_t *tmpbuf_trunc = (tuwtype_t *)malloc(count%blockSize * sizeof(tuwtype_t));
     tuwtype_t tmp;
     if (rank == 0)
     {
-        for (int b = 0; b < count; b++)
+        printf("%f",sendbuf[0]);
+        for (int b = 0; b < count; b += blockSize)
         {
-            MPI_Recv(tmpbuf,blockSize, MPI_DOUBLE, 1, 0, comm, MPI_STATUS_IGNORE);
-            tmp = tmpbuf[0];
-            for(int i = 1; i < blockSize; i++) {
-                tmp = tmpbuf[i] > tmp ? tmpbuf[i] : tmp;
+            MPI_Recv(tmpbuf,blockSize, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            for (int j = 0; j < blockSize; j++)
+            {
+                recvbuf[b+j] = tmpbuf[j] > recvbuf[b+j] ? tmpbuf[j] : recvbuf[b+j];
             }
-            recvbuf[b] = tmp > recvbuf[b] ? tmp : recvbuf[b];
+        printf("%f",sendbuf[0]);
         }
+        if(count % blockSize != 0){
+             
+            MPI_Recv(tmpbuf_trunc,count % blockSize, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            for (int j = 0; j < count % blockSize; j++)
+            {
+                recvbuf[trunc_chunk_idx +j] = tmpbuf_trunc[j] > recvbuf[trunc_chunk_idx +j] ? tmpbuf_trunc[j] : recvbuf[trunc_chunk_idx +j];
+            }
+        }
+        printf("%f",sendbuf[0]);
     }
     else if (rank == size -1){
-        for (int b = 0; b < count; b++)
+        for (int b = 0; b < count; b += blockSize)
         {
-            MPI_Send(sendbuf, blockSize, MPI_DOUBLE, rank - 1, 0 ,comm);
+            MPI_Send(sendbuf+b, blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
+        }
+        if(count % blockSize != 0){
+            MPI_Send(sendbuf+trunc_chunk_idx, blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
         }
     }
     else 
     {
-        MPI_Recv(tmpbuf,blockSize, MPI_DOUBLE, rank - 1, 0, comm, MPI_STATUS_IGNORE );
-        tmp = tmpbuf[0];
-        for(int i = 1; i < blockSize; i++) {
-            tmp = tmpbuf[i] > tmp ? tmpbuf[i] : tmp;
-        }
-        recvbuf[0] = tmp > recvbuf[0] ? tmp : recvbuf[0];
-        for (int b = 1; b < count; b++)
+        MPI_Recv(tmpbuf,blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+        //tmp = maxFun(tmpbuf);
+        //recvbuf[0] = tmp > recvbuf[0] ? tmp : recvbuf[0];
+        for (int j = 0; j < blockSize; j++)
         {
-            MPI_Sendrecv(sendbuf + b-1, blockSize, MPI_DOUBLE, rank + 1, 0, tmpbuf,blockSize, MPI_DOUBLE, rank - 1, 0, comm, MPI_STATUS_IGNORE);
-            tmp = tmpbuf[0];
-            for(int i = 1; i < blockSize; i++) {
-              tmp = tmpbuf[i] > tmp ? tmpbuf[i] : tmp;
-            }
-            recvbuf[b] = tmp > recvbuf[b] ? tmp : recvbuf[b];
+            recvbuf[j] = tmpbuf[j] > recvbuf[j] ? tmpbuf[j] : recvbuf[j];
         }
-        MPI_Send(sendbuf + count-1, blockSize, MPI_DOUBLE, rank + 1, 0 ,comm);
+
+
+        for (int b = blockSize; b < count; b += blockSize)
+        {
+            MPI_Sendrecv(sendbuf + b - blockSize, blockSize, MPI_DOUBLE, rank - 1, 0, tmpbuf, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            for (int j = 0; j < blockSize; j++)
+            {
+                recvbuf[b+j] = tmpbuf[j] > recvbuf[b+j] ? tmpbuf[j] : recvbuf[b+j];
+            }
+
+        }
+        MPI_Send(sendbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
+        if(count%blockSize != 0){
+            MPI_Recv(tmpbuf_trunc,count%blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            for (int j = 0; j < count % blockSize; j++){
+                recvbuf[trunc_chunk_idx +j] = tmpbuf_trunc[j] > recvbuf[trunc_chunk_idx +j] ? tmpbuf_trunc[j] : recvbuf[trunc_chunk_idx +j];
+            }
+            MPI_Send(sendbuf + trunc_chunk_idx, count%blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
+        }
     }
-    printf("at bcast%d\n",rank);
-    for(int i = 0; i < count; i++) {
-        printf("%f",recvbuf[i]);
-    }
+
+    //printf("at bcast%d\n",rank);
+    //for(int i = 0; i < count; i++) {
+        //printf("%f",recvbuf[i]);
+    //}
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Pipelined Bcast [traeff_lecturenotes]
-    if (rank == 0)
+
+    /*
+        if (rank == 0)
     {
-        for (int b = 0; b < count; b++)
+        for (int b = 0; b < count; b += blockSize)
         {
-            MPI_Send(sendbuf+b*blockSize, blockSize, MPI_DOUBLE, rank + 1, 0 ,comm);
+            MPI_Send(sendbuf+b, blockSize, MPI_DOUBLE, rank + 1, 0 , MPI_COMM_WORLD);
         }
     }
     else if (rank == size -1){
-        for (int b = 0; b < count; b++)
+        for (int b = 0; b < count; b += blockSize)
         {
-            MPI_Recv(recvbuf+b,blockSize, MPI_DOUBLE, rank - 1, 0, comm, MPI_STATUS_IGNORE );
+            MPI_Recv(recvbuf+b, blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
         }
     }
     else 
+    
+
     // int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)
     // int MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     //              int dest, int sendtag,
@@ -103,16 +141,17 @@ int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, in
     //              int source, int recvtag, MPI_Comm comm, MPI_Status * status)
 
     {
-        MPI_Recv(recvbuf,blockSize, MPI_DOUBLE, rank - 1, 0, comm, MPI_STATUS_IGNORE );
+        MPI_Recv(recvbuf,blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
         // printf("%d\n",rank);
-        for (int b = 1; b < count; b++)
+        for (int b = blockSize; b < count; b += blockSize)
         {
             // printf("before sendrc%d\n",rank);
-            MPI_Sendrecv(sendbuf + b-1, blockSize, MPI_DOUBLE, rank + 1, 0, recvbuf + b,blockSize, MPI_DOUBLE, rank - 1, 0, comm, MPI_STATUS_IGNORE);
+            MPI_Sendrecv(sendbuf + b - blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, recvbuf + b,blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             // printf("after sendrc%d\n",rank);
         }
-        MPI_Send(sendbuf + count-1, blockSize, MPI_DOUBLE, rank + 1, 0 ,comm);
+        MPI_Send(sendbuf + count - blockSize, blockSize, MPI_DOUBLE, rank + 1, 0 ,MPI_COMM_WORLD);
     }
+    */
     return MPI_SUCCESS;
 }
 
@@ -129,13 +168,13 @@ int main(int argc, char *argv[])
 
     double start, stop;
     double runtime[REPEAT];
-
+    printf("hallo");
     MPI_Init(&argc, &argv);
-
+    
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    count = 4;
+    count = 10;
 
    
     sendbuf = (tuwtype_t *)malloc(count * sizeof(tuwtype_t));
@@ -156,11 +195,12 @@ int main(int argc, char *argv[])
     c = count - 1;
     // int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm)
     //MPI_Reduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, 0, MPI_COMM_WORLD);
-    reduce_BCast(sendbuf, testbuf, count, size, rank, MPI_COMM_WORLD);
+    reduce_BCast(sendbuf, testbuf, count, size, rank);
+    MPI_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     for (i = 0; i < count; i++) {
-        assert(recvbuf[i] == testbuf[i]);
-        // printf("%f, %f\n", recvbuf[i], testbuf[i]);
+        //assert(recvbuf[i] == testbuf[i]);
+        printf("%f, %f\n", recvbuf[i], testbuf[i]);
     }
 /* 
     int f = 5;
