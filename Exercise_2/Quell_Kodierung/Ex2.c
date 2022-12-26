@@ -43,7 +43,8 @@ int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, in
     {
         for (int b = 0; b < count; b++)
         {
-            MPI_Recv(tmpbuf,blockSize, MPI_DOUBLE, MPI_ANY_SOURCE, 0, comm, MPI_STATUS_IGNORE);
+            //MPI_Recv(tmpbuf,blockSize, MPI_DOUBLE, MPI_ANY_SOURCE, 0, comm, MPI_STATUS_IGNORE);
+            MPI_Send(sendbuf, blockSize, MPI_DOUBLE, 1, 0 ,comm);
             tmp = tmpbuf[0];
             for(int i = 1; i < blockSize; i++) {
                 tmp = tmpbuf[i] > tmp ? tmpbuf[i] : tmp;
@@ -113,6 +114,7 @@ int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, in
         }
         MPI_Send(sendbuf + count-1, blockSize, MPI_DOUBLE, rank + 1, 0 ,comm);
     }
+    return MPI_SUCCESS;
 }
 
 int main(int argc, char *argv[])
