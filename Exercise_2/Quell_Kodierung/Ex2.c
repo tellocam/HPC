@@ -82,14 +82,11 @@ int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, in
     }
     else 
     {
-        MPI_Recv(tmpbuf,blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-        //tmp = maxFun(tmpbuf);
-        //recvbuf[0] = tmp > recvbuf[0] ? tmp : recvbuf[0];
+        MPI_Recv(tmpbuf,blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         for (int j = 0; j < blockSize; j++)
         {
             recvbuf[j] = tmpbuf[j] > recvbuf[j] ? tmpbuf[j] : recvbuf[j];
         }
-
 
         for (int b = blockSize; b < count; b += blockSize)
         {
