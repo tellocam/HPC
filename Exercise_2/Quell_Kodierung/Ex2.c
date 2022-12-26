@@ -34,7 +34,7 @@ typedef double tuwtype_t;
 
 #define blockSize 1
 
-
+// Apparently we do bcast of maximum.
 int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int rank, int comm)
 {
     tuwtype_t *tmpbuf = (tuwtype_t *)malloc(blockSize * sizeof(tuwtype_t));
@@ -43,8 +43,7 @@ int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, in
     {
         for (int b = 0; b < count; b++)
         {
-            //MPI_Recv(tmpbuf,blockSize, MPI_DOUBLE, MPI_ANY_SOURCE, 0, comm, MPI_STATUS_IGNORE);
-            MPI_Send(sendbuf, blockSize, MPI_DOUBLE, 1, 0 ,comm);
+            MPI_Recv(tmpbuf,blockSize, MPI_DOUBLE, 1, 0, comm, MPI_STATUS_IGNORE);
             tmp = tmpbuf[0];
             for(int i = 1; i < blockSize; i++) {
                 tmp = tmpbuf[i] > tmp ? tmpbuf[i] : tmp;
@@ -55,7 +54,7 @@ int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, in
     else if (rank == size -1){
         for (int b = 0; b < count; b++)
         {
-            MPI_Send(sendbuf, blockSize, MPI_DOUBLE, 0, 0 ,comm);
+            MPI_Send(sendbuf, blockSize, MPI_DOUBLE, rank - 1, 0 ,comm);
         }
     }
     else 
@@ -121,7 +120,7 @@ int main(int argc, char *argv[])
 {
     int rank, size;
     int count, c;
-
+    // printf("argv0:%s\n", argv[2]);
     tuwtype_t *sendbuf, *recvbuf, *testbuf;
 
     int i;
