@@ -51,7 +51,7 @@ int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, in
     tuwtype_t tmp;
     if (rank == 0)
     {
-        printf("START RANK 0: %f\n",sendbuf[0]);
+        // printf("START RANK 0: %f\n",sendbuf[0]);
         for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
             MPI_Recv(tmpbuf, blockSize, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -100,7 +100,8 @@ int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, in
         MPI_Send(sendbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
         if(count%blockSize != 0){
             MPI_Recv(tmpbuf_trunc, count%blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            for (int j = 0; j < count % blockSize; j++){
+            for (int j = 0; j < count % blockSize; j++)
+            {
                 recvbuf[trunc_chunk_idx +j] = tmpbuf_trunc[j] > recvbuf[trunc_chunk_idx +j] ? tmpbuf_trunc[j] : recvbuf[trunc_chunk_idx +j];
             }
             MPI_Send(sendbuf + trunc_chunk_idx, count%blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
@@ -114,18 +115,26 @@ int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, in
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Pipelined Bcast [traeff_lecturenotes]
 
-    /*
-        if (rank == 0)
+    
+    if (rank == 0)
     {
-        for (int b = 0; b < count; b += blockSize)
+        for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
-            MPI_Send(sendbuf+b, blockSize, MPI_DOUBLE, rank + 1, 0 , MPI_COMM_WORLD);
+            MPI_Send(sendbuf+b, blockSize, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);
+        }
+        if(count % blockSize != 0)
+        {
+            MPI_Send(sendbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, 1, 0, MPI_COMM_WORLD);
         }
     }
     else if (rank == size -1){
-        for (int b = 0; b < count; b += blockSize)
+        for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
             MPI_Recv(recvbuf+b, blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+        }
+        if(count % blockSize != 0)
+        {
+            MPI_Recv(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
         }
     }
     else 
@@ -138,17 +147,22 @@ int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, in
     //              int source, int recvtag, MPI_Comm comm, MPI_Status * status)
 
     {
-        MPI_Recv(recvbuf,blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+        MPI_Recv(recvbuf, blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
         // printf("%d\n",rank);
-        for (int b = blockSize; b < count; b += blockSize)
+        for (int b = blockSize; b < trunc_chunk_idx; b += blockSize)
         {
             // printf("before sendrc%d\n",rank);
-            MPI_Sendrecv(sendbuf + b - blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, recvbuf + b,blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Sendrecv(sendbuf + b - blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, recvbuf + b, blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             // printf("after sendrc%d\n",rank);
         }
-        MPI_Send(sendbuf + count - blockSize, blockSize, MPI_DOUBLE, rank + 1, 0 ,MPI_COMM_WORLD);
+        MPI_Send(sendbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
+        if(count % blockSize != 0)
+        {
+            MPI_Recv(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+            MPI_Send(sendbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
+        }
     }
-    */
+    
     // free(tmpbuf);
     // free(tmpbuf_trunc);
     return MPI_SUCCESS;
@@ -199,8 +213,8 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     for (i = 0; i < count; i++) {
-        //assert(recvbuf[i] == testbuf[i]);
-        printf("%f, %f\n", recvbuf[i], testbuf[i]);
+        assert(recvbuf[i] == testbuf[i]);
+        // printf("%f, %f\n", recvbuf[i], testbuf[i]);
     }
 /* 
     int f = 5;
