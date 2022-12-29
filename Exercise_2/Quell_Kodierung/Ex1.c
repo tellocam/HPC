@@ -1,4 +1,4 @@
-/* (C) Jesper Larsson Traff, October 2022 */
+/* (C) Manuela Maria Magdalena Raidl, October 2022 */
 /* Alltoall algorithms for fully connected networks */
 /* Example code for HPC 2022, see script Section 7.2 */
 
@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
     // compute mean, min
     // TODO: compute median, CI, standard deviation
     if (rank==0) {
-      double tuwavg, tuwmin;
+      double tuwavg, tuwmin, tuwmed, tuwCI, tuwstddev;
       
       tuwavg = 0.0; 
       tuwmin = runtime[0]; 
