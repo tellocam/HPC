@@ -44,7 +44,7 @@ typedef double tuwtype_t;
 // }
 
 // Apparently we do bcast of maximum.
-int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int rank)
+int MY_Reduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int rank)
 {
     int trunc_chunk_idx = floor(count/blockSize)*blockSize; // index of first truncated chunk.. yes funny.
     tuwtype_t *tmpbuf = (tuwtype_t *)malloc(blockSize * sizeof(tuwtype_t));
@@ -105,7 +105,21 @@ int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, in
             }
             MPI_Send(sendbuf + trunc_chunk_idx, count%blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
         }
-    }
+    }  
+    // warum funktioniert free() nicht???
+    // free(tmpbuf);
+    // free(tmpbuf_trunc);
+    return MPI_SUCCESS;
+}
+
+
+
+int MY_Bcast_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int rank)
+{
+    int trunc_chunk_idx = floor(count/blockSize)*blockSize; // index of first truncated chunk.. yes funny.
+    tuwtype_t *tmpbuf = (tuwtype_t *)malloc(blockSize * sizeof(tuwtype_t));
+    tuwtype_t *tmpbuf_trunc = (tuwtype_t *)malloc(count%blockSize * sizeof(tuwtype_t));
+    tuwtype_t tmp;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Pipelined Bcast [traeff_lecturenotes]
@@ -153,6 +167,9 @@ int reduce_BCast(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, in
     return MPI_SUCCESS;
 }
 
+
+
+
 int main(int argc, char *argv[])
 {
     int rank, size;
@@ -187,7 +204,9 @@ int main(int argc, char *argv[])
     c = count - 1;
     // int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm)
     // MPI_Reduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, 0, MPI_COMM_WORLD);
-    reduce_BCast(sendbuf, testbuf, count, size, rank);
+    // reduce_BCast(sendbuf, testbuf, count, size, rank);
+    MY_Reduce_P(sendbuf, testbuf, count, size, rank);
+    MY_Bcast_P(sendbuf, testbuf, count, size, rank);
     MPI_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
