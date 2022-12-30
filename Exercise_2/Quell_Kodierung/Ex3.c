@@ -52,6 +52,8 @@ int MY_Allreduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, 
 
     int masterrank;
     MPI_Request request; // TODO: can we use the MPI_Request in a way it actually does make sense?
+    MPI_Request *req = (MPI_Request *)malloc(ceil(count/blockSize) * sizeof(MPI_Request));
+    MPI_Status *stat = (MPI_Status *)malloc(ceil(count/blockSize) * sizeof(MPI_Status));
     int blockid;
 
     // blocks of standard size blockSize:
@@ -62,7 +64,8 @@ int MY_Allreduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, 
         // printf("rank at start of block iteration: %d\n", rank);
         if (rank == masterrank) 
         {
-            MPI_Irecv(tmpbuf, blockSize, MPI_DOUBLE, (rank+1)%size, blockid, MPI_COMM_WORLD, &request);
+            MPI_Irecv(tmpbuf, blockSize, MPI_DOUBLE, (rank+1)%size, blockid, MPI_COMM_WORLD, &req[blockid]);
+            // MPI_Recv(tmpbuf, blockSize, MPI_DOUBLE, (rank+1)%size, blockid, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int j = 0; j < blockSize; j++)
             {
                 recvbuf[blockid*blockSize+j] = tmpbuf[j] > recvbuf[blockid*blockSize+j] ? tmpbuf[j] : recvbuf[blockid*blockSize+j];
@@ -71,18 +74,26 @@ int MY_Allreduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, 
         }
         else if (rank == (masterrank+size-1) % size)
         {
-            MPI_Isend(sendbuf + blockid*blockSize, blockSize, MPI_DOUBLE, (rank+size-1)%size, blockid, MPI_COMM_WORLD, &request);
+            MPI_Isend(sendbuf + blockid*blockSize, blockSize, MPI_DOUBLE, (rank+size-1)%size, blockid, MPI_COMM_WORLD, &req[blockid]);
+            // MPI_Send(sendbuf + blockid*blockSize, blockSize, MPI_DOUBLE, (rank+size-1)%size, blockid, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
 
         else
         {
-            // // Sendrecv only as blocking operation available -> use Isend and Irecv instead
-            // MPI_Irecv(tmpbuf, blockSize, MPI_DOUBLE, (rank+1)%size, blockid, MPI_COMM_WORLD, &request);
+            // Sendrecv only as blocking operation available -> use Isend and Irecv instead
+            MPI_Irecv(tmpbuf, blockSize, MPI_DOUBLE, (rank+1)%size, blockid, MPI_COMM_WORLD, &req[blockid]);
+            for (int j = 0; j < blockSize; j++)
+            {
+                recvbuf[blockid*blockSize+j] = tmpbuf[j] > recvbuf[blockid*blockSize+j] ? tmpbuf[j] : recvbuf[blockid*blockSize+j];
+            }
+            MPI_Wait(&req[blockid], &stat[blockid]);
+            MPI_Isend(sendbuf + blockid*blockSize, blockSize, MPI_DOUBLE, (rank+size-1)%size, blockid, MPI_COMM_WORLD, &req[blockid]);        
+            // MPI_Recv(tmpbuf, blockSize, MPI_DOUBLE, (rank+1)%size, blockid, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             // for (int j = 0; j < blockSize; j++)
             // {
             //     recvbuf[blockid*blockSize+j] = tmpbuf[j] > recvbuf[blockid*blockSize+j] ? tmpbuf[j] : recvbuf[blockid*blockSize+j];
             // }
-            // MPI_Isend(sendbuf + blockid*blockSize, blockSize, MPI_DOUBLE, (rank+size-1)%size, blockid, MPI_COMM_WORLD, &request);        
+            // MPI_Send(sendbuf + blockid*blockSize, blockSize, MPI_DOUBLE, (rank+size-1)%size, blockid, MPI_COMM_WORLD, &req[blockid]);          
         }
     }
     // block of smaller size count%blockSize
@@ -107,12 +118,12 @@ int MY_Allreduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, 
         else
         {
             // Sendrecv only as blocking operation available -> use Isend and Irecv instead
-            MPI_Irecv(tmpbuf_trunc, count%blockSize, MPI_DOUBLE, (rank+1)%size, blockid, MPI_COMM_WORLD, &request);
+            MPI_Irecv(tmpbuf_trunc, count%blockSize, MPI_DOUBLE, (rank+1)%size, blockid, MPI_COMM_WORLD, &req[blockid]);
             for (int j = 0; j < count%blockSize; j++)
             {
                 recvbuf[blockid*blockSize+j] = tmpbuf_trunc[j] > recvbuf[blockid*blockSize+j] ? tmpbuf_trunc[j] : recvbuf[blockid*blockSize+j];
             }
-            MPI_Isend(sendbuf + blockid*blockSize, count%blockSize, MPI_DOUBLE, (rank+size-1)%size, blockid, MPI_COMM_WORLD, &request);        
+            MPI_Isend(sendbuf + blockid*blockSize, count%blockSize, MPI_DOUBLE, (rank+size-1)%size, blockid, MPI_COMM_WORLD, &req[blockid]);        
         }
     }
 
@@ -190,8 +201,8 @@ int main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    count = 6;
-   
+    count = 12;
+    
     sendbuf = (tuwtype_t *)malloc(count * sizeof(tuwtype_t));
     assert(sendbuf != NULL);
     recvbuf = (tuwtype_t *)malloc(count * sizeof(tuwtype_t));
