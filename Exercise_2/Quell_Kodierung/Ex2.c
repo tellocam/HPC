@@ -89,21 +89,21 @@ int MY_Reduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int
 
         for (int b = blockSize; b < trunc_chunk_idx; b += blockSize)
         {
-            MPI_Sendrecv(sendbuf + b - blockSize, blockSize, MPI_DOUBLE, rank - 1, 0, tmpbuf, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Sendrecv(recvbuf + b - blockSize, blockSize, MPI_DOUBLE, rank - 1, 0, tmpbuf, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int j = 0; j < blockSize; j++)
             {
                 recvbuf[b+j] = tmpbuf[j] > recvbuf[b+j] ? tmpbuf[j] : recvbuf[b+j];
             }
 
         }
-        MPI_Send(sendbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
+        MPI_Send(recvbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
         if(count%blockSize != 0){
             MPI_Recv(tmpbuf_trunc, count%blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int j = 0; j < count % blockSize; j++)
             {
                 recvbuf[trunc_chunk_idx +j] = tmpbuf_trunc[j] > recvbuf[trunc_chunk_idx +j] ? tmpbuf_trunc[j] : recvbuf[trunc_chunk_idx +j];
             }
-            MPI_Send(sendbuf + trunc_chunk_idx, count%blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
+            MPI_Send(recvbuf + trunc_chunk_idx, count%blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
         }
     }  
     // warum funktioniert free() nicht???
@@ -151,13 +151,13 @@ int MY_Bcast_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int 
         MPI_Recv(recvbuf, blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
         for (int b = blockSize; b < trunc_chunk_idx; b += blockSize)
         {
-            MPI_Sendrecv(sendbuf + b - blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, recvbuf + b, blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Sendrecv(recvbuf + b - blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, recvbuf + b, blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
-        MPI_Send(sendbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
+        MPI_Send(recvbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
         if(count % blockSize != 0)
         {
             MPI_Recv(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-            MPI_Send(sendbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
+            MPI_Send(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
         }
     }
     
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
     // MPI_Reduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, 0, MPI_COMM_WORLD);
     // reduce_BCast(sendbuf, testbuf, count, size, rank);
     MY_Reduce_P(sendbuf, testbuf, count, size, rank);
-    MY_Bcast_P(sendbuf, testbuf, count, size, rank);
+    MY_Bcast_P(testbuf, testbuf, count, size, rank);
     MPI_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
