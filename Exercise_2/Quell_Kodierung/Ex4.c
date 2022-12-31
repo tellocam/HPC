@@ -13,14 +13,14 @@
 
 
 /* Algorithm selection done at compile time */
-#ifndef ALLTOALL
-#define ALLTOALL Alltoall_fully
-// #define ALLTOALL Alltoall_telephone
-// #define ALLTOALL Alltoall_factor
-// #define ALLTOALL MPI_Alltoall
-#endif
+// #ifndef ALLTOALL
+// #define ALLTOALL Alltoall_fully
+// // #define ALLTOALL Alltoall_telephone
+// // #define ALLTOALL Alltoall_factor
+// // #define ALLTOALL MPI_Alltoall
+// #endif
 
-#define ALLTOALLTAG 7777
+// #define ALLTOALLTAG 7777
 
 // Benchmarking parameters
 #define WARMUP 8
@@ -30,7 +30,7 @@
 #define TUW_TYPE MPI_DOUBLE
 typedef double tuwtype_t;
 
-#define FLIP(_fac, _mul1, _mul2) (_fac = ((_fac == _mul1) ? (_mul2) : (_mul1)))
+// #define FLIP(_fac, _mul1, _mul2) (_fac = ((_fac == _mul1) ? (_mul2) : (_mul1)))
 
 #define blockSize 4
 
@@ -49,7 +49,6 @@ int get_childR(int id)
     return 2*id+2;
 }
 
-// Apparently we do bcast of maximum.
 int MY_Reduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int node)
 {
     int trunc_chunk_idx = floor(count/blockSize)*blockSize; // index of first truncated chunk.. yes funny.
@@ -68,7 +67,7 @@ int MY_Reduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int
             MPI_Recv(tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int j = 0; j < blockSize; j++)
             {
-                recvbuf[b+j] = tmpbufL[j] > recvbuf[b+j] ? tmpbufL[j] : recvbuf[b+j];
+                recvbuf[b+j] = tmpbufL[j] > sendbuf[b+j] ? tmpbufL[j] : sendbuf[b+j];
                 recvbuf[b+j] = tmpbufR[j] > recvbuf[b+j] ? tmpbufR[j] : recvbuf[b+j];
             }
         }
@@ -78,7 +77,7 @@ int MY_Reduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int
             MPI_Recv(tmpbufR_trunc, count % blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int j = 0; j < count % blockSize; j++)
             {
-                recvbuf[trunc_chunk_idx +j] = tmpbufL_trunc[j] > recvbuf[trunc_chunk_idx +j] ? tmpbufL_trunc[j] : recvbuf[trunc_chunk_idx +j];
+                recvbuf[trunc_chunk_idx +j] = tmpbufL_trunc[j] > sendbuf[trunc_chunk_idx +j] ? tmpbufL_trunc[j] : sendbuf[trunc_chunk_idx +j];
                 recvbuf[trunc_chunk_idx +j] = tmpbufR_trunc[j] > recvbuf[trunc_chunk_idx +j] ? tmpbufR_trunc[j] : recvbuf[trunc_chunk_idx +j];
             }
         }
@@ -99,40 +98,33 @@ int MY_Reduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int
         MPI_Recv(tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         for (int j = 0; j < blockSize; j++)
         {
-            recvbuf[j] = tmpbufL[j] > recvbuf[j] ? tmpbufL[j] : recvbuf[j];
+            recvbuf[j] = tmpbufL[j] > sendbuf[j] ? tmpbufL[j] : sendbuf[j];
             recvbuf[j] = tmpbufR[j] > recvbuf[j] ? tmpbufR[j] : recvbuf[j];
         }
-
         for (int b = blockSize; b < trunc_chunk_idx; b += blockSize)
         {
-            MPI_Sendrecv(sendbuf + b - blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0, tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            MPI_Sendrecv(sendbuf + b - blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0, tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Sendrecv(recvbuf + b - blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0, tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Sendrecv(recvbuf + b - blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0, tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int j = 0; j < blockSize; j++)
             {
-                recvbuf[b+j] = tmpbufL[j] > recvbuf[b+j] ? tmpbufL[j] : recvbuf[b+j];
+                recvbuf[b+j] = tmpbufL[j] > sendbuf[b+j] ? tmpbufL[j] : sendbuf[b+j];
                 recvbuf[b+j] = tmpbufR[j] > recvbuf[b+j] ? tmpbufR[j] : recvbuf[b+j];
             }
-
         }
-        MPI_Send(sendbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
+        MPI_Send(recvbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
         if(count%blockSize != 0){
             MPI_Recv(tmpbufL_trunc, count%blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             MPI_Recv(tmpbufR_trunc, count%blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int j = 0; j < count % blockSize; j++)
             {
-                recvbuf[trunc_chunk_idx +j] = tmpbufL_trunc[j] > recvbuf[trunc_chunk_idx +j] ? tmpbufL_trunc[j] : recvbuf[trunc_chunk_idx +j];
+                recvbuf[trunc_chunk_idx +j] = tmpbufL_trunc[j] > sendbuf[trunc_chunk_idx +j] ? tmpbufL_trunc[j] : sendbuf[trunc_chunk_idx +j];
                 recvbuf[trunc_chunk_idx +j] = tmpbufR_trunc[j] > recvbuf[trunc_chunk_idx +j] ? tmpbufR_trunc[j] : recvbuf[trunc_chunk_idx +j];
             }
-            MPI_Send(sendbuf + trunc_chunk_idx, count%blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
+            MPI_Send(recvbuf + trunc_chunk_idx, count%blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
         }
     }  
-    // warum funktioniert free() nicht???
-    // free(tmpbuf);
-    // free(tmpbuf_trunc);
     return MPI_SUCCESS;
 }
-
-
 
 int MY_Bcast_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int node)
 {
@@ -142,13 +134,9 @@ int MY_Bcast_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int 
     tuwtype_t *tmpbufL_trunc = (tuwtype_t *)malloc(count%blockSize * sizeof(tuwtype_t));
     tuwtype_t *tmpbufR_trunc = (tuwtype_t *)malloc(count%blockSize * sizeof(tuwtype_t));
     tuwtype_t tmp;
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Pipelined Bcast [traeff_lecturenotes]
     
-    if (node == 0)
+    if (node == 0) // node == root
     {
-        // printf(" hello from root\n");
         for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
             MPI_Send(sendbuf+b, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD);
@@ -160,9 +148,8 @@ int MY_Bcast_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int 
             MPI_Send(sendbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD);
         }
     }
-    else if (node >= (size-1)/2)
+    else if (node >= (size-1)/2) // node == leaf
     {
-        // printf(" hello from leaf %d\n", node);
         for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
             MPI_Recv(recvbuf+b, blockSize, MPI_DOUBLE, get_parent(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
@@ -172,18 +159,14 @@ int MY_Bcast_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int 
             MPI_Recv(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_parent(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
         }
     }
-    else 
+    else // node == interior
     {
-        // printf(" hello from interior %d\n", node);
-        // MPI_Recv(recvbuf, blockSize, MPI_DOUBLE, get_parent(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
         for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
             MPI_Recv(recvbuf+b, blockSize, MPI_DOUBLE, get_parent(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
             MPI_Send(recvbuf+b, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD);
             MPI_Send(recvbuf+b, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD);
-            // MPI_Sendrecv(sendbuf + b - blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0, recvbuf + b, blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
-        // MPI_Send(sendbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
         if(count % blockSize != 0)
         {
             MPI_Recv(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_parent(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
@@ -191,21 +174,13 @@ int MY_Bcast_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int 
             MPI_Send(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD);
         }
     }
-    
-    // warum funktioniert free() nicht???
-    // free(tmpbuf);
-    // free(tmpbuf_trunc);
     return MPI_SUCCESS;
 }
 
-
-
-
 int main(int argc, char *argv[])
 {
-    // printf("----- \n Number of processors must be of size 2^n-1. \n----- \n");
     int rank, size;
-    int count, c;
+    int count;
     tuwtype_t *sendbuf, *recvbuf, *testbuf;
 
     double start, stop;
@@ -215,6 +190,8 @@ int main(int argc, char *argv[])
     
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if(rank == 0) printf("----- \n Number of processors must be of size 2^n-1. \n----- \n");
 
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
@@ -236,8 +213,6 @@ int main(int argc, char *argv[])
         testbuf[i] = (tuwtype_t)-1;
 
     // "correctness test": compare against result from library function
-    c = count - 1;
-
     MY_Reduce_T(sendbuf, testbuf, count, size, rank);
     MY_Bcast_T(testbuf, testbuf, count, size, rank);
     MPI_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
@@ -248,54 +223,7 @@ int main(int argc, char *argv[])
         // printf("%f, %f\n", recvbuf[i], testbuf[i]); // for debugging
     }
  
-    // int r, t;
-    // int f = 5;
-    // for (c = 1; c <= count; c *= f, FLIP(f, 2, 5))
-    // {
-    //     if (c * size > size * count)
-    //         break;
-
-    //     for (r = 0, t = 0; r < WARMUP + REPEAT; r++)
-    //     {
-    //         MPI_Barrier(MPI_COMM_WORLD);
-    //         MPI_Barrier(MPI_COMM_WORLD);
-
-    //         start = MPI_Wtime();
-
-    //         // ALLTOALL(sendbuf, c, TUW_TYPE, testbuf, c, TUW_TYPE, MPI_COMM_WORLD);
-    //         // int reduce_BCast(void *sendbuf, void *recvbuf, int count, int size, int rank, int comm)
-    //         // reduce_BCast(sendbuf, recvbuf, count, size, rank, MPI_COMM_WORLD);
-    //         reduce_BCast(sendbuf, testbuf, count, size, rank);
-
-
-    //         stop = MPI_Wtime();
-
-    //         MPI_Barrier(MPI_COMM_WORLD);
-    //         MPI_Barrier(MPI_COMM_WORLD);
-    //         if (r < WARMUP)
-    //             continue;
-    //         runtime[t++] = stop - start;
-    //     }
-    //     MPI_Allreduce(MPI_IN_PLACE, runtime, t, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-
-    //     if (rank == 0)
-    //     {
-    //         double tuwavg, tuwmin;
-
-    //         tuwavg = 0.0;
-    //         tuwmin = runtime[0];
-    //         for (t = 0; t < REPEAT; t++)
-    //         {
-    //             tuwavg += runtime[t];
-    //             if (runtime[t] < tuwmin)
-    //                 tuwmin = runtime[t];
-    //         }
-    //         tuwavg /= REPEAT;
-
-    //         fprintf(stderr, "%d & %d & %ld & %.2f & %.2f \\\\\n",
-    //                 c, c , c * sizeof(tuwtype_t), tuwavg * MICRO, tuwmin * MICRO);
-    //     }
-    // }
+    // TODO: add benchmarking here
  
     MPI_Finalize();
 
