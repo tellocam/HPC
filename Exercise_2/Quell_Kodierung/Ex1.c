@@ -1,7 +1,8 @@
-/* (C) Manuela Maria Magdalena Raidl Avg. Git Enthusiast, October 2022 */
+/* (C) Manuela Maria Magdalena Raidl Avg. Git Enthusiast und Camilo Tello Fachin aka BananaMan, October 2022 */
 /* Alltoall algorithms for fully connected networks */
 /* Example code for HPC 2022, see script Section 7.2 */
 
+#pragma GCC diagnostic ignored "-Wformat-truncation"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -84,7 +85,7 @@ tuwtype_t find_CI_MOR(tuwtype_t stddev, size_t N){
 int main(int argc, char *argv[])
 {
   int rank, size;
-  int power, count, c;
+  int power, count, c, gentxt;
   
   tuwtype_t *sendbuf, *recvbuf, *testbuf;
 
@@ -96,19 +97,41 @@ int main(int argc, char *argv[])
   runtime = (tuwtype_t*)malloc(REPEAT * sizeof(tuwtype_t));
   assert(runtime!=0);
 
-  MPI_Init(&argc,&argv);
-  
-  MPI_Comm_size(MPI_COMM_WORLD,&size);
-  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+
  
   count = 1;
   power = 2;
-  bool gentxt = false;
+  gentxt = 0;
   for (i=1; i<argc&&argv[i][0]=='-'; i++) {
     if (argv[i][1]=='c') i++, sscanf(argv[i],"%d",&count);
     if (argv[i][1]=='p') i++, sscanf(argv[i], "%d", &power);
-    if (argv[i][1]=='gentxt') i++, gentxt = true;
+    if (argv[i][1]=='g') i++, sscanf(argv[i], "%d", &gentxt);
   }
+
+  MPI_Init(&argc,&argv);
+  MPI_Comm_size(MPI_COMM_WORLD,&size);
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);
+
+  FILE *fp; // file pointer
+  if(rank==0){
+      if (gentxt!=0){
+        char file_name[127];
+        char file_suffix[64];
+        char pow_char[8];
+        char uline[8] = "_";
+        sprintf(file_suffix, "%X", size);
+        snprintf(pow_char, sizeof(pow_char), "%d", power);
+        strcat(file_suffix, uline);
+        strcat(file_suffix, pow_char);
+        sprintf(file_name, "EX1_%s.txt", file_suffix);
+        fp = fopen(file_name, "w");
+        if (fp == NULL) {
+        printf("Error opening file!\n");
+        }
+      }
+  }
+
+
 
   // allocate and initialize data for "correctness tests":
   sendbuf = (tuwtype_t*)malloc(count*sizeof(tuwtype_t));
@@ -135,7 +158,6 @@ int main(int argc, char *argv[])
   if (rank==0) {
     fprintf(stderr,"Results for MY_Allreduce(), MPI Processes=%d \n",size); 
     fprintf(stderr,"count, m (Bytes), avg, min, median, stddev,  CIMOR \n"); 
-    //fprintf(stderr,"count & m (count) & m (Bytes) & avg & min & median & stddev & CIMOR \n"); 
   }
 
   // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
@@ -180,15 +202,27 @@ int main(int argc, char *argv[])
 
       fprintf(stderr, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n", 
 	      c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
+      if (gentxt!=0){
+        fprintf(fp, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n",
+          c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
+      }
+      
+    }
+  
+  }
+
+  if(gentxt!=0){
+    if(rank==0){
+      fclose(fp);
     }
   }
-  
+
   MPI_Finalize();
-  
   free(sendbuf);
   free(recvbuf);
   free(testbuf);
   free(runtime);
+
   
   return 0;
 }
