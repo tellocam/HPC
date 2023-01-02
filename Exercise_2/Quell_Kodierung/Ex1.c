@@ -84,7 +84,7 @@ tuwtype_t find_CI_MOR(tuwtype_t stddev, size_t N){
 int main(int argc, char *argv[])
 {
   int rank, size;
-  int count, c;
+  int power, count, c;
   
   tuwtype_t *sendbuf, *recvbuf, *testbuf;
 
@@ -102,8 +102,12 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
  
   count = 1;
+  power = 2;
+  bool gentxt = false;
   for (i=1; i<argc&&argv[i][0]=='-'; i++) {
-    if (argv[i][1]=='c') i++,sscanf(argv[i],"%d",&count);
+    if (argv[i][1]=='c') i++, sscanf(argv[i],"%d",&count);
+    if (argv[i][1]=='p') i++, sscanf(argv[i], "%d", &power);
+    if (argv[i][1]=='gentxt') i++, gentxt = true;
   }
 
   // allocate and initialize data for "correctness tests":
@@ -129,12 +133,12 @@ int main(int argc, char *argv[])
 
   // prepare headline for benchmarking results
   if (rank==0) {
-    fprintf(stderr,"Results for MY_Allreduce(), MPI Processes=%d\\\\\n",size); 
-    fprintf(stderr,"count & m (count) & m (Bytes) & avg & min & median & stddev & CIMOR \\\\\n"); 
+    fprintf(stderr,"Results for MY_Allreduce(), MPI Processes=%d \n",size); 
+    fprintf(stderr,"count, m (Bytes), avg, min, median, stddev,  CIMOR \n"); 
+    //fprintf(stderr,"count & m (count) & m (Bytes) & avg & min & median & stddev & CIMOR \n"); 
   }
 
-  // TIME MEASURE FOR POWERS OF power
-  int power = 2;
+  // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
   for (c = 1; c <= count; c *= power)
   {
     if (c > count) break;
@@ -174,7 +178,7 @@ int main(int argc, char *argv[])
       tuwstddev = find_stddev(runtime, (size_t)REPEAT, tuwavg);
       CI_MOR = find_CI_MOR(tuwstddev, (size_t)REPEAT);
 
-      fprintf(stderr, "%d & %ld & %.2f & %.2f & %.2f & %.2f & %.2f \\\\\n", 
+      fprintf(stderr, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n", 
 	      c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
     }
   }
