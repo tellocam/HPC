@@ -48,8 +48,6 @@ int get_childR(int id)
 }
 
 
-
-
 int MY_Allreduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int node)
 {
     // int trunc_chunk_idx = floor(count/blockSize)*blockSize; // index of first truncated chunk.. yes funny.
@@ -65,49 +63,58 @@ int MY_Allreduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, 
 
     int d = floor(log2(node+1)); // level of node
     int d_max = floor(log2(size+1));
-    int b = ceil(count/blockSize);
+    int b = ceil((double)count/blockSize);
     int sendSize;
 
     for ( int j = 0; j < b+d_max; j++ )
     {
         if (node < (size-1)/2) // node != leaf
         {
-            sendSize = (j-(d+1)<0 || j-(d+1)>=b) ? 0 : blockSize;        
-            MPI_Sendrecv(recvbuf + (j-(d+1))*blockSize, sendSize, MPI_DOUBLE, get_childL(node), 0, tmpbuf, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, &status);
+            sendSize = count-j*blockSize >= blockSize ? blockSize : count%blockSize;
+            sendSize = (j-(d+1)<0 || j-(d+1)>=b) ? 0 : sendSize;
+            MPI_Sendrecv(recvbuf + (j-(d+1))*blockSize, sendSize, MPI_DOUBLE, get_childL(node), j, tmpbuf, blockSize, MPI_DOUBLE, get_childL(node), j, MPI_COMM_WORLD, &status);
             MPI_Get_count(&status, MPI_DOUBLE, &recvcount);
+            // if (node==0) printf("recvcount: %d\n", recvcount);
             for (int i = 0; i < recvcount; i++)
             {
-                recvbuf[j*blockSize+i] = tmpbuf[i] > recvbuf[(j-(d+1))*blockSize+i] ? tmpbuf[i] : recvbuf[(j-(d+1))*blockSize+i];
+                recvbuf[j*blockSize+i] = tmpbuf[i] > recvbuf[j*blockSize+i] ? tmpbuf[i] : recvbuf[j*blockSize+i];
+                // printf("RECV: rank: %d, j: %d, recvbuf: %f\n", node, j, recvbuf[j*blockSize+i]);
             }
-            MPI_Sendrecv(recvbuf + (j-(d+1))*blockSize, sendSize, MPI_DOUBLE, get_childR(node), 0, tmpbuf, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, &status);
+            MPI_Sendrecv(recvbuf + (j-(d+1))*blockSize, sendSize, MPI_DOUBLE, get_childR(node), j, tmpbuf, blockSize, MPI_DOUBLE, get_childR(node), j, MPI_COMM_WORLD, &status);
             MPI_Get_count(&status, MPI_DOUBLE, &recvcount);
             for (int i = 0; i < recvcount; i++)
             {
-                recvbuf[j*blockSize+i] = tmpbuf[i] > recvbuf[(j-(d+1))*blockSize+i] ? tmpbuf[i] : recvbuf[(j-(d+1))*blockSize+i];
+                recvbuf[j*blockSize+i] = tmpbuf[i] > recvbuf[j*blockSize+i] ? tmpbuf[i] : recvbuf[j*blockSize+i];
+                // printf("recv2: %f\n", recvbuf[j*blockSize+i]);
             }     
         }
         if (node != 0) // node != root
         {
-            sendSize = (j<0 || j>=b) ? 0 : blockSize;
-            MPI_Sendrecv(recvbuf + j*blockSize, sendSize, MPI_DOUBLE, get_parent(node), 0, tmpbuf, blockSize, MPI_DOUBLE, get_parent(node), 0, MPI_COMM_WORLD, &status);
+            sendSize = count-j*blockSize >= blockSize ? blockSize : count%blockSize;
+            // printf("no1 rank: %d, sendsize: %d, b: %d, j: %d\n", node, sendSize, b, j);
+            sendSize = (j<0 || j>=b) ? 0 : sendSize;
+            // printf("no2 rank: %d, sendsize: %d\n", node, sendSize);
+            for (int i =  0; i < sendSize; i++) 
+                {
+                    // printf("SEND: rank: %d, j: %d, recv3: %f\n", node, j, recvbuf[j*blockSize+i]);
+                }
+
+
+            MPI_Sendrecv(recvbuf + j*blockSize, sendSize, MPI_DOUBLE, get_parent(node), j, tmpbuf, blockSize, MPI_DOUBLE, get_parent(node), j, MPI_COMM_WORLD, &status);
             MPI_Get_count(&status, MPI_DOUBLE, &recvcount);
             if (j-d >= 0 && j-d < b && recvcount > 0)
             {
-                memcpy(&recvbuf[(j-d)*blockSize], tmpbuf, sizeof(tuwtype_t)*recvcount);
+                // memcpy(&recvbuf[(j-d)*blockSize], tmpbuf, sizeof(tuwtype_t)*recvcount);
+                for (int i =  0; i < recvcount; i++) 
+                {
+                    recvbuf[(j-d)*blockSize+i] = tmpbuf[i];
+                    // printf("RECV: rank: %d, j: %d, recv4: %f\n", node, j, recvbuf[(j-d)*blockSize+i]);
+                }
             }
         }
-        // printf("j = %d\n", j);
     }
     return MPI_SUCCESS;
 }
-
-
-
-
-
-
-
-
 
 int main(int argc, char *argv[])
 {
@@ -128,7 +135,7 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    count = 6;
+    count = 7;
    
     sendbuf = (tuwtype_t *)malloc(count * sizeof(tuwtype_t));
     assert(sendbuf != NULL);
@@ -154,8 +161,8 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < count; i++) {
-        // assert(recvbuf[i] == sendbuf[i]);
-        printf("%f, %f\n", recvbuf[i], sendbuf[i]); // for debugging
+        assert(recvbuf[i] == sendbuf[i]);
+        // printf("%f, %f\n", recvbuf[i], sendbuf[i]); // for debugging
     }
  
     // TODO: add benchmarking here
