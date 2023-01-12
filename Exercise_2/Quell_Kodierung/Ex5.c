@@ -136,7 +136,9 @@ int main(int argc, char *argv[])
     assert(testbuf != NULL);
 
     for (int i = 0; i < count; i++)
-        sendbuf[i] = (tuwtype_t)i*(rank+1);
+        // sendbuf[i] = (tuwtype_t)i*(rank+1);
+        // sendbuf[i] = (tuwtype_t)i*(size-rank);
+        sendbuf[i] = (tuwtype_t)((i*(rank+1))%3);
     for (int i = 0; i < count; i++)
         recvbuf[i] = (tuwtype_t)-1;
     for (int i = 0; i < count; i++)
