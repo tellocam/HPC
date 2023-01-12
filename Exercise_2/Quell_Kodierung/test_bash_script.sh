@@ -1,0 +1,1 @@
+mpirun -np 4 ./Ex1 -c 100 -p 2 -g 1
