@@ -137,6 +137,7 @@ int MY_Bcast_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int 
     
     if (node == 0) // node == root
     {
+        memcpy(&recvbuf[0], sendbuf, count * sizeof(tuwtype_t)); 
         for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
             MPI_Send(sendbuf+b, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD);
@@ -173,7 +174,8 @@ int MY_Bcast_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int 
             MPI_Send(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD);
             MPI_Send(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD);
         }
-    }
+    } 
+
     return MPI_SUCCESS;
 }
 
@@ -181,7 +183,7 @@ int main(int argc, char *argv[])
 {
     int rank, size;
     int count;
-    tuwtype_t *sendbuf, *recvbuf, *testbuf;
+    tuwtype_t *sendbuf, *recvbuf, *testbuf, *testbuf1;
 
     double start, stop;
     double runtime[REPEAT];
@@ -204,23 +206,28 @@ int main(int argc, char *argv[])
     assert(recvbuf != NULL);
     testbuf = (tuwtype_t *)malloc(count * sizeof(tuwtype_t));
     assert(testbuf != NULL);
+    testbuf1 = (tuwtype_t *)malloc(count * sizeof(tuwtype_t));
+    assert(testbuf1 != NULL);
 
     for (int i = 0; i < count; i++)
-        sendbuf[i] = (tuwtype_t)i;
+        // sendbuf[i] = (tuwtype_t)i;
+        // sendbuf[i] = (tuwtype_t)i*(rank+1);
+        // sendbuf[i] = (tuwtype_t)i*(size-rank);
+        sendbuf[i] = (tuwtype_t)((i*(rank+1))%3);
     for (int i = 0; i < count; i++)
         recvbuf[i] = (tuwtype_t)-1;
     for (int i = 0; i < count; i++)
         testbuf[i] = (tuwtype_t)-1;
 
     // "correctness test": compare against result from library function
-    MY_Reduce_T(sendbuf, testbuf, count, size, rank);
-    MY_Bcast_T(testbuf, testbuf, count, size, rank);
+    MY_Reduce_T(sendbuf, testbuf1, count, size, rank);
+    MY_Bcast_T(testbuf1, testbuf, count, size, rank);
     MPI_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < count; i++) {
         assert(recvbuf[i] == testbuf[i]);
-        // printf("%f, %f\n", recvbuf[i], testbuf[i]); // for debugging
+        // printf("node: %d -> %f, %f\n", rank, recvbuf[i], testbuf[i]); // for debugging
     }
  
     // TODO: add benchmarking here
@@ -230,6 +237,7 @@ int main(int argc, char *argv[])
     free(sendbuf);
     free(recvbuf);
     free(testbuf);
+    free(testbuf1);
 
     return 0;
 }
