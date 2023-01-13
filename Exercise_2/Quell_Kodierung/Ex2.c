@@ -185,7 +185,7 @@ tuwtype_t find_CI_MOR(tuwtype_t stddev, size_t N){
 int main(int argc, char *argv[])
 {
     int rank, size;
-    int power, count, c, gentxt, blockSize;
+    int power, count, c, hydra_nodes, gentxt, blockSize;
     tuwtype_t *sendbuf, *recvbuf, *testbuf;
     tuwtype_t start, stop;
     int i, r, t;
@@ -204,15 +204,17 @@ int main(int argc, char *argv[])
     power = 2;
     gentxt = 0;
     blockSize = 4;
+    hydra_nodes = 1;
     for (i=1; i<argc&&argv[i][0]=='-'; i++) {
     if (argv[i][1]=='c') i++, sscanf(argv[i],"%d",&count); // commandline arg -c for adjusting max. count, if none given count = 10
     if (argv[i][1]=='p') i++, sscanf(argv[i], "%d", &power); // commandline arg -p for adjusting the power, if none given power = 2
     if (argv[i][1]=='b') i++, sscanf(argv[i], "%d", &blockSize); // commandline arg. -b for adjusting blocksize, if none given blockSize = 4
+    if (argv[i][1]=='h') i++, sscanf(argv[i], "%d", &hydra_nodes); // commandline arg. -b for adjusting blocksize, if none given blockSize = 4
     if (argv[i][1]=='g') i++, sscanf(argv[i], "%d", &gentxt); // commandline arg. -g for generating a txt, if none given, no .txt
     }
 
     /* 
-    mpirun -np 8 ./Ex2 -c 50 -p 2 -b 4 -g 1
+    mpirun -np 8 ./Ex2 -c 50 -p 2 -b 4 -h 1 -g 1
     here a commandline example which executes the binary with 8 MPI Processes, max. count of 50, iterators raised to the power of 2
     pipelining blocksize of 2 and will generate a .txt file with commas as value separators.
     */
@@ -230,17 +232,24 @@ int main(int argc, char *argv[])
     if (gentxt!=0){
         char file_name[127];
         char file_suffix[64];
+        char sizepn_char[8];
         char pow_char[8];
         char blockSize_char[8];
         char uline[8] = "_";
-        sprintf(file_suffix, "%X", size);
+        sprintf(file_suffix, "%X", hydra_nodes);
+        snprintf(sizepn_char, sizeof(sizepn_char), "%d", size/hydra_nodes);
         snprintf(pow_char, sizeof(pow_char), "%d", power);
         snprintf(blockSize_char, sizeof(blockSize_char), "%d", blockSize);
+        strcat(file_suffix, uline);
+        strcat(file_suffix, sizepn_char);
         strcat(file_suffix, uline);
         strcat(file_suffix, pow_char);
         strcat(file_suffix, uline);
         strcat(file_suffix, blockSize_char);
         sprintf(file_name, "EX2_%s.txt", file_suffix);
+        // filename is gonna be like "EX1_<nodes>_<processesPerNode>_<power>_<blockSize>.txt"
+        // be careful to always hand over the -h commandline argument when running on multiple nodes, its just gonna be used for .txt file suffix!
+        // mpirun -np 8 ./Ex2 -c 50 -p 2 -b 4 -h 2 -g 1
         fp = fopen(file_name, "w");
         if (fp == NULL) {
         printf("Error opening file!\n");

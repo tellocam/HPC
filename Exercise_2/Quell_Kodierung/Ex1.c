@@ -85,7 +85,7 @@ tuwtype_t find_CI_MOR(tuwtype_t stddev, size_t N){
 int main(int argc, char *argv[])
 {
   int rank, size;
-  int power, count, c, gentxt;
+  int power, count, c, hydra_nodes, gentxt;
   
   tuwtype_t *sendbuf, *recvbuf, *testbuf;
 
@@ -101,10 +101,12 @@ int main(int argc, char *argv[])
  
   count = 1;
   power = 2;
+  hydra_nodes = 1;
   gentxt = 0;
   for (i=1; i<argc&&argv[i][0]=='-'; i++) {
     if (argv[i][1]=='c') i++, sscanf(argv[i],"%d",&count);
     if (argv[i][1]=='p') i++, sscanf(argv[i], "%d", &power);
+    if (argv[i][1]=='h') i++, sscanf(argv[i], "%d", &hydra_nodes);
     if (argv[i][1]=='g') i++, sscanf(argv[i], "%d", &gentxt);
   }
 
@@ -117,13 +119,20 @@ int main(int argc, char *argv[])
       if (gentxt!=0){
         char file_name[127];
         char file_suffix[64];
+        char sizepn_char[8];
         char pow_char[8];
         char uline[8] = "_";
-        sprintf(file_suffix, "%X", size);
+        sprintf(file_suffix, "%X", hydra_nodes);
         snprintf(pow_char, sizeof(pow_char), "%d", power);
+        snprintf(sizepn_char, sizeof(sizepn_char), "%d", size/hydra_nodes);
+        strcat(file_suffix, uline);
+        strcat(file_suffix, sizepn_char);
         strcat(file_suffix, uline);
         strcat(file_suffix, pow_char);
-        sprintf(file_name, "EX1_%s.txt", file_suffix);
+        sprintf(file_name, "EX1_%s.txt", file_suffix);  
+        // filename is gonna be like "EX1_<nodes>_<processesPerNode>_<Power>.txt"
+        // be careful to always hand over the -h commandline argument when running on multiple nodes, its just gonna be used for .txt file suffix!
+        // mpirun -np 8 ./Ex1 -c 50 -p 2 -h 1 -g 1
         fp = fopen(file_name, "w");
         if (fp == NULL) {
         printf("Error opening file!\n");
