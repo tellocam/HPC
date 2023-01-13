@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
   // prepare headline for benchmarking results
   if (rank==0) {
     fprintf(stderr,"Results for MY_Allreduce(), MPI Processes=%d \n",size); 
-    fprintf(stderr,"count, m (Bytes), avg, min, median, stddev,  CIMOR \n"); 
+    fprintf(stderr,"count, m (Bytes), avg, min, median, stddev,  CIMOE \n"); 
   }
 
   // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
