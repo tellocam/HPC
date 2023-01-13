@@ -323,7 +323,6 @@ int main(int argc, char *argv[])
     }
     MPI_Allreduce(MPI_IN_PLACE, runtime, t, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     
-
     // compute mean, minimum (slowest process)
     // compute median, CI, standard deviation
     if (rank==0) {
