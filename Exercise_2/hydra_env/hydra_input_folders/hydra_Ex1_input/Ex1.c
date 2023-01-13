@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
       
       start = MPI_Wtime();
       
-      MY_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
+      MY_Allreduce(sendbuf, recvbuf, c, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
       
       stop = MPI_Wtime();
       

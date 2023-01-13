@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
         char sizepn_char[8];
         char pow_char[8];
         char uline[8] = "_";
-        sprintf(file_suffix, "%X", hydra_nodes);
+        sprintf(file_suffix, "%d", hydra_nodes);
         snprintf(pow_char, sizeof(pow_char), "%d", power);
         snprintf(sizepn_char, sizeof(sizepn_char), "%d", size/hydra_nodes);
         strcat(file_suffix, uline);
@@ -180,7 +180,8 @@ int main(int argc, char *argv[])
       
       start = MPI_Wtime();
       
-      MY_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
+      // MY_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
+      MY_Allreduce(sendbuf, recvbuf, c, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
       
       stop = MPI_Wtime();
       
