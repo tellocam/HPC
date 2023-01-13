@@ -69,20 +69,23 @@ int MY_Reduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int
     }
     else 
     {
-        MPI_Recv(tmpbuf, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        for (int j = 0; j < blockSize; j++)
-        {
-            recvbuf[j] = tmpbuf[j] > sendbuf[j] ? tmpbuf[j] : sendbuf[j];
-        }
-        for (int b = blockSize; b < trunc_chunk_idx; b += blockSize)
-        {
-            MPI_Sendrecv(recvbuf + b - blockSize, blockSize, MPI_DOUBLE, rank - 1, 0, tmpbuf, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        if(count >= blockSize){
+            MPI_Recv(tmpbuf, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int j = 0; j < blockSize; j++)
             {
-                recvbuf[b+j] = tmpbuf[j] > sendbuf[b+j] ? tmpbuf[j] : sendbuf[b+j];
+                recvbuf[j] = tmpbuf[j] > sendbuf[j] ? tmpbuf[j] : sendbuf[j];
             }
+            
+            for (int b = blockSize; b < trunc_chunk_idx; b += blockSize)
+            {
+                MPI_Sendrecv(recvbuf + b - blockSize, blockSize, MPI_DOUBLE, rank - 1, 0, tmpbuf, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                for (int j = 0; j < blockSize; j++)
+                {
+                    recvbuf[b+j] = tmpbuf[j] > sendbuf[b+j] ? tmpbuf[j] : sendbuf[b+j];
+                }
+            }
+            MPI_Send(recvbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
         }
-        MPI_Send(recvbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, rank - 1, 0 , MPI_COMM_WORLD);
         if(count%blockSize != 0){
             MPI_Recv(tmpbuf_trunc, count%blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int j = 0; j < count % blockSize; j++)
@@ -131,13 +134,16 @@ int MY_Bcast_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int 
     }
     else 
     {
-        MPI_Recv(recvbuf, blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
-        for (int b = blockSize; b < trunc_chunk_idx; b += blockSize)
-        {
-            MPI_Sendrecv(recvbuf + b - blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, recvbuf + b, blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        if(count >= blockSize){
+            MPI_Recv(recvbuf, blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
+            for (int b = blockSize; b < trunc_chunk_idx; b += blockSize)
+            {
+                MPI_Sendrecv(recvbuf + b - blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, recvbuf + b, blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            }
+            MPI_Send(recvbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
         }
-        MPI_Send(recvbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
         if(count % blockSize != 0)
+
         {
             MPI_Recv(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
             MPI_Send(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, rank + 1, 0, MPI_COMM_WORLD);
@@ -288,8 +294,8 @@ int main(int argc, char *argv[])
  
   // prepare headline for benchmarking results
   if (rank==0) {
-    fprintf(stderr,"Results for MY_Allreduce(), MPI Processes=%d \n",size); 
-    fprintf(stderr,"count, m (Bytes), avg, min, median, stddev,  CIMOR \n"); 
+    fprintf(stderr,"Results for My_Allreduce_PP, MPI Processes=%d \n",size); 
+    fprintf(stderr,"count, m (Bytes), avg, min, median, stddev,  CIMOE \n"); 
   }
 
   // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
@@ -302,9 +308,11 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
       
     start = MPI_Wtime();
-      
-    MY_Reduce_P(sendbuf, testbuf, count, size, rank, blockSize);
-    MY_Bcast_P(testbuf, testbuf, count, size, rank, blockSize);
+    //printf("test \n");
+    MY_Reduce_P(sendbuf, testbuf, c, size, rank, blockSize);
+    //printf("test \n");
+    //fflush(stdout);
+    MY_Bcast_P(testbuf, testbuf, c, size, rank, blockSize);
       
     stop = MPI_Wtime();
       
@@ -315,7 +323,6 @@ int main(int argc, char *argv[])
     }
     MPI_Allreduce(MPI_IN_PLACE, runtime, t, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     
-
     // compute mean, minimum (slowest process)
     // compute median, CI, standard deviation
     if (rank==0) {
