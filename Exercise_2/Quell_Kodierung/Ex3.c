@@ -176,8 +176,9 @@ int main(int argc, char *argv[])
             strcat(file_suffix, uline);
             strcat(file_suffix, BSCHAR);
             strcat(file_suffix, bs_char);
-            sprintf(file_name, "EX2_%s.txt", file_suffix);  
-            // mpirun -np 8 ./Ex2 -c 50 -h 1 -p 1 -b 4 -g 1
+            sprintf(file_name, "EX2_%s.txt", file_suffix); 
+            // mpicc -o Ex3 Ex3.c -lm O3 
+            // mpirun -np 8 ./Ex3 -c 50 -p 2 -b 4 -h 1 -g 1
             fp = fopen(file_name, "w");
             if (fp == NULL) {
                 printf("Error opening file!\n");

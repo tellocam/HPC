@@ -86,16 +86,16 @@ int MY_Reduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int
     }
     else // node == interior
     {
-        for (int j = 0; j < blockSize; j++) 
+        for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
             MPI_Recv(tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             MPI_Recv(tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int j = 0; j < blockSize; j++)
             {
-                recvbuf[j] = tmpbufL[j] > sendbuf[j] ? tmpbufL[j] : sendbuf[j];
-                recvbuf[j] = tmpbufR[j] > recvbuf[j] ? tmpbufR[j] : recvbuf[j];
+                recvbuf[b+j] = tmpbufL[j] > sendbuf[b+j] ? tmpbufL[j] : sendbuf[b+j];
+                recvbuf[b+j] = tmpbufR[j] > recvbuf[b+j] ? tmpbufR[j] : recvbuf[b+j];
             }
-            MPI_Send(recvbuf + j*blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
+            MPI_Send(recvbuf + b, blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
         }
 
         // MPI_Recv(tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -274,7 +274,8 @@ int main(int argc, char *argv[])
             strcat(file_suffix, BSCHAR);
             strcat(file_suffix, bs_char);
             sprintf(file_name, "EX2_%s.txt", file_suffix);  
-            // mpirun -np 8 ./Ex4 -c 50 -h 1 -p 1 -b 4 -g 1
+            // mpicc -o Ex4 Ex4.c -lm -O3
+            // mpirun -np 8 ./Ex4 -c 50 -h 1 -p 2 -b 4 -g 1
             fp = fopen(file_name, "w");
             if (fp == NULL) {
                 printf("Error opening file!\n");
@@ -307,13 +308,10 @@ int main(int argc, char *argv[])
 
     // "correctness test": compare against result from library function
     MY_Reduce_T(sendbuf, testbuf1, count, size, rank, blockSize);
-    printf("kommt es eh hierher? \n");
     MY_Bcast_T(testbuf1, testbuf, count, size, rank, blockSize);
     MPI_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
-
-    printf("kommt es eh hierher? \n");
 
     for (int i = 0; i < count; i++) {
         assert(recvbuf[i] == testbuf[i]);
