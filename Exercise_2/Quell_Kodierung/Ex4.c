@@ -55,47 +55,79 @@ int MY_Reduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int
     {
         for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
-            MPI_Recv(tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            MPI_Recv(tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            for (int j = 0; j < blockSize; j++)
+            if (get_childL(node) < size)
             {
-                recvbuf[b+j] = tmpbufL[j] > sendbuf[b+j] ? tmpbufL[j] : sendbuf[b+j];
-                recvbuf[b+j] = tmpbufR[j] > recvbuf[b+j] ? tmpbufR[j] : recvbuf[b+j];
+                MPI_Recv(tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                for (int j = 0; j < blockSize; j++)
+                {
+                    recvbuf[b+j] = tmpbufL[j] > sendbuf[b+j] ? tmpbufL[j] : sendbuf[b+j];
+                }
+                if (get_childR(node) < size)
+                {
+                    MPI_Recv(tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    for (int j = 0; j < blockSize; j++)
+                    {
+                        recvbuf[b+j] = tmpbufR[j] > recvbuf[b+j] ? tmpbufR[j] : recvbuf[b+j];
+                    }
+                } 
             }
+            
         }
         if(count % blockSize != 0){
              
-            MPI_Recv(tmpbufL_trunc, count % blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            MPI_Recv(tmpbufR_trunc, count % blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            for (int j = 0; j < count % blockSize; j++)
+            if (get_childL(node) < size)
             {
-                recvbuf[trunc_chunk_idx +j] = tmpbufL_trunc[j] > sendbuf[trunc_chunk_idx +j] ? tmpbufL_trunc[j] : sendbuf[trunc_chunk_idx +j];
-                recvbuf[trunc_chunk_idx +j] = tmpbufR_trunc[j] > recvbuf[trunc_chunk_idx +j] ? tmpbufR_trunc[j] : recvbuf[trunc_chunk_idx +j];
-            }
+                MPI_Recv(tmpbufL_trunc, count % blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                for (int j = 0; j < count % blockSize; j++)
+                {
+                    recvbuf[trunc_chunk_idx +j] = tmpbufL_trunc[j] > sendbuf[trunc_chunk_idx +j] ? tmpbufL_trunc[j] : sendbuf[trunc_chunk_idx +j];
+                }
+                if (get_childR(node) < size)
+                {
+                    MPI_Recv(tmpbufR_trunc, count % blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    for (int j = 0; j < count % blockSize; j++)
+                    {
+                        recvbuf[trunc_chunk_idx +j] = tmpbufR_trunc[j] > recvbuf[trunc_chunk_idx +j] ? tmpbufR_trunc[j] : recvbuf[trunc_chunk_idx +j];
+                    }
+                }
+            }   
         }
     }
-    else if (node >= (size-1)/2) // node == leaf
+    else if (get_childL(node) >= size) // node == leaf (if no children <=> if no left child)
     {
+        // printf("leaf: %d \n", node);
         for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
-            MPI_Send(sendbuf+b, blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
+            MPI_Send(sendbuf+b, blockSize, MPI_DOUBLE, get_parent(node), 0, MPI_COMM_WORLD);
         }
         if(count % blockSize != 0){
-            MPI_Send(sendbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
+            MPI_Send(sendbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_parent(node), 0, MPI_COMM_WORLD);
         }
     }
     else // node == interior
     {
         for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
-            MPI_Recv(tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            MPI_Recv(tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            for (int j = 0; j < blockSize; j++)
+            if (get_childL(node) < size) // immer true
             {
-                recvbuf[b+j] = tmpbufL[j] > sendbuf[b+j] ? tmpbufL[j] : sendbuf[b+j];
-                recvbuf[b+j] = tmpbufR[j] > recvbuf[b+j] ? tmpbufR[j] : recvbuf[b+j];
+                // printf("interior with left child: %d , b = %d\n", node, b);
+                MPI_Recv(tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                for (int j = 0; j < blockSize; j++)
+                {
+                    recvbuf[b+j] = tmpbufL[j] > sendbuf[b+j] ? tmpbufL[j] : sendbuf[b+j];
+                }
+                if (get_childR(node) < size)
+                {
+                    // printf("interior with right child: %d , b = %d\n", node, b);
+                    MPI_Recv(tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    for (int j = 0; j < blockSize; j++)
+                    {
+                        recvbuf[b+j] = tmpbufR[j] > recvbuf[b+j] ? tmpbufR[j] : recvbuf[b+j];
+                    }
+                } 
+                MPI_Send(recvbuf + b, blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
             }
-            MPI_Send(recvbuf + b, blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
+            // MPI_Send(recvbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
         }
 
         // MPI_Recv(tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -118,14 +150,25 @@ int MY_Reduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int
         // MPI_Send(recvbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
         if(count%blockSize != 0)
         {
-            MPI_Recv(tmpbufL_trunc, count%blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            MPI_Recv(tmpbufR_trunc, count%blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            for (int j = 0; j < count % blockSize; j++)
+            if (get_childL(node) < size)
             {
-                recvbuf[trunc_chunk_idx +j] = tmpbufL_trunc[j] > sendbuf[trunc_chunk_idx +j] ? tmpbufL_trunc[j] : sendbuf[trunc_chunk_idx +j];
-                recvbuf[trunc_chunk_idx +j] = tmpbufR_trunc[j] > recvbuf[trunc_chunk_idx +j] ? tmpbufR_trunc[j] : recvbuf[trunc_chunk_idx +j];
+                // printf("interior with left child: %d , b = trunk\n", node);
+                MPI_Recv(tmpbufL_trunc, count % blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                for (int j = 0; j < count % blockSize; j++)
+                {
+                    recvbuf[trunc_chunk_idx +j] = tmpbufL_trunc[j] > sendbuf[trunc_chunk_idx +j] ? tmpbufL_trunc[j] : sendbuf[trunc_chunk_idx +j];
+                }
+                if (get_childR(node) < size)
+                {
+                    // printf("interior with left child: %d , b = trunk\n", node);
+                    MPI_Recv(tmpbufR_trunc, count % blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                    for (int j = 0; j < count % blockSize; j++)
+                    {
+                        recvbuf[trunc_chunk_idx +j] = tmpbufR_trunc[j] > recvbuf[trunc_chunk_idx +j] ? tmpbufR_trunc[j] : recvbuf[trunc_chunk_idx +j];
+                    }
+                }
             }
-            MPI_Send(recvbuf + trunc_chunk_idx, count%blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
+            MPI_Send(recvbuf + trunc_chunk_idx, count%blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);   
         }
     }  
     return MPI_SUCCESS;
@@ -145,16 +188,28 @@ int MY_Bcast_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int 
         memcpy(&recvbuf[0], sendbuf, count * sizeof(tuwtype_t)); 
         for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
-            MPI_Send(sendbuf+b, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD);
-            MPI_Send(sendbuf+b, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD);
+            if (get_childL(node) < size)
+            {
+                MPI_Send(sendbuf+b, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD);
+                if (get_childR(node) < size)
+                {
+                    MPI_Send(sendbuf+b, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD);
+                }
+            }       
         }
         if(count % blockSize != 0)
         {
-            MPI_Send(sendbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD);
-            MPI_Send(sendbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD);
+            if (get_childL(node) < size) 
+            {
+                MPI_Send(sendbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD);
+                if (get_childR(node) < size)
+                {
+                    MPI_Send(sendbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD);
+                }
+            }   
         }
     }
-    else if (node >= (size-1)/2) // node == leaf
+    else if (get_childL(node) >= size) // node == leaf (if no children <=> if no left child)
     {
         for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
@@ -171,13 +226,21 @@ int MY_Bcast_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int 
         {
             MPI_Recv(recvbuf+b, blockSize, MPI_DOUBLE, get_parent(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
             MPI_Send(recvbuf+b, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD);
-            MPI_Send(recvbuf+b, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD);
+            if (get_childR(node) < size)
+            {
+                MPI_Send(recvbuf+b, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD);
+            }
+            
         }
         if(count % blockSize != 0)
         {
             MPI_Recv(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_parent(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE );
             MPI_Send(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD);
-            MPI_Send(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD);
+            if (get_childR(node) < size)
+            {
+                MPI_Send(recvbuf+trunc_chunk_idx, count % blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD);
+            }
+            
         }
     } 
 
@@ -315,11 +378,11 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < count; i++) {
         assert(recvbuf[i] == testbuf[i]);
-        // printf("node: %d -> %f, %f\n", rank, recvbuf[i], testbuf[i]); // for debugging
+        // printf("node: %d, i = %d -> %f, %f, %f\n", rank, i, recvbuf[i], testbuf1[i], testbuf[i]); // for debugging
     }
  
         // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
-    for (c = 3; c <= count; c *= power)
+    for (c = 1; c <= count; c *= power)
     {
     if (c > count) break;
     
