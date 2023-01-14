@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
   }
 
   // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
-  for (c = 1; c <= count; c *= power)
+  for (c = 10; c <= count; c *= power)
   {
     if (c > count) break;
     
