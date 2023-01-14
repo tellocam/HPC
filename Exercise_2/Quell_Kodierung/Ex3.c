@@ -162,7 +162,6 @@ int main(int argc, char *argv[])
     // MY_Allreduce_P(sendbuf, testbuf, count, size, rank);
     // end timing
 
-
  
     MPI_Finalize();
 
