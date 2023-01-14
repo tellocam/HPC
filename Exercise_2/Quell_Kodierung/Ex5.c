@@ -1,7 +1,3 @@
-/* (C) Jesper Larsson Traff, October 2022 */
-/* Alltoall algorithms for fully connected networks */
-/* Example code for HPC 2022, see script Section 7.2 */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +16,7 @@ char file_suffix[64];
 char node_char[16];
 char sizepn_char[16];
 char pow_char[16];
-char bs_char[16]
+char bs_char[16];
 char uline[16] = "_";
 char NCHAR[16] = "N";
 char TCHAR[16] = "T";
@@ -29,8 +25,6 @@ char BSCHAR[16] = "B";
 
 #define TUW_TYPE MPI_DOUBLE
 typedef double tuwtype_t;
-
-#define blockSize 13
 
 int get_parent(int id)
 {
@@ -48,7 +42,7 @@ int get_childR(int id)
 }
 
 
-int MY_Allreduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int node)
+int MY_Allreduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int node, int blockSize)
 {
     // workbuf is what will be worked on (Y from algorithm)
     // Start: workbuf = sendbuf
@@ -106,27 +100,109 @@ int MY_Allreduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, 
     return MPI_SUCCESS;
 }
 
+// qsort helper function to find median in compute_stats
+int cmp_tuwtype(const void *a, const void *b) {
+  tuwtype_t da = *(tuwtype_t *)a;
+  tuwtype_t db = *(tuwtype_t *)b;
+  return (da > db) - (da < db);
+}
+
+tuwtype_t find_median(tuwtype_t *runtime, size_t N){
+  tuwtype_t *runtime_copy = malloc(N * sizeof(tuwtype_t));
+  memcpy(runtime_copy, runtime, N * sizeof(tuwtype_t));
+  // sort runtime_copy
+  qsort(runtime_copy, N, sizeof(tuwtype_t), cmp_tuwtype);
+  // compute median
+    if (N % 2 == 1) {
+       return runtime_copy[N / 2];
+    } else {
+       return (runtime_copy[N / 2 - 1] + runtime_copy[N / 2]) / 2;
+      }
+  free(runtime_copy);
+}
+
+tuwtype_t find_stddev(tuwtype_t *runtime, size_t N, tuwtype_t avg){
+  tuwtype_t var = 0;
+  for(size_t i = 0; i < N; i++){
+    var += (runtime[i] - avg) * (runtime[i] - avg);
+  }
+  var /= N-1;
+  return sqrt(var);
+}
+
+tuwtype_t find_CI_MOR(tuwtype_t stddev, size_t N){
+  tuwtype_t t = 1.96; // t-value for 95% confidence interval with N-1 degrees of freedom -> wikipedia :-)
+  return t * stddev / sqrt(N);
+}
+
 int main(int argc, char *argv[])
 {
     int rank, size;
-    int count;
+    int power, count, c, hydra_nodes, gentxt, blockSize;
     tuwtype_t *sendbuf, *recvbuf, *testbuf;
-
-    double start, stop;
-    double runtime[REPEAT];
+    tuwtype_t start, stop;
+    int i, r, t;
+    tuwtype_t *runtime;
+    runtime = (tuwtype_t*)malloc(REPEAT * sizeof(tuwtype_t));
+    assert(runtime!=0);
 
     MPI_Init(&argc, &argv);
-    
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    if(rank == 0) printf("----- \n Number of processors must be of size 2^n-1. \n----- \n");
-
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-
     count = 7;
+    power = 2;
+    gentxt = 0;
+    blockSize = 13;
+    hydra_nodes = 1;
+
+    for (i=1; i<argc&&argv[i][0]=='-'; i++) {
+        if (argv[i][1]=='c') i++, sscanf(argv[i],"%d",&count); // commandline arg -c for adjusting max. count, if none given count = 10
+        if (argv[i][1]=='p') i++, sscanf(argv[i], "%d", &power); // commandline arg -p for adjusting the power, if none given power = 2
+        if (argv[i][1]=='b') i++, sscanf(argv[i], "%d", &blockSize); // commandline arg. -b for adjusting blocksize, if none given blockSize = 4
+        if (argv[i][1]=='h') i++, sscanf(argv[i], "%d", &hydra_nodes); // commandline arg. -b for adjusting blocksize, if none given blockSize = 4
+        if (argv[i][1]=='g') i++, sscanf(argv[i], "%d", &gentxt); // commandline arg. -g for generating a txt, if none given, no .txt
+    }
+
+    if(rank == 0){
+        //printf("----- \n Number of processors must be of size 2^n-1. \n----- \n");
+        fprintf(stderr,"Results for Ex5 with %d Processes, on %d Nodes with Blocksize %d and powers of %d \n",size/hydra_nodes, hydra_nodes, blockSize, power); 
+        fprintf(stderr,"count, m (Bytes), avg, min, median, stddev,  CIMOE \n");
+    }
+
+    FILE *fp; // file pointer
+    // Filenaming is: "EX1_N36_T32_P2.txt" Where N36 = 36 Nodes, T32 = 32 Task per Node, P2 = Powers of 2
+    if(rank==0){
+        if (gentxt!=0){
+            sprintf(file_suffix, "%s", NCHAR);
+            snprintf(node_char, sizeof(node_char), "%d", hydra_nodes);
+            snprintf(pow_char, sizeof(pow_char), "%d", power);
+            snprintf(bs_char, sizeof(bs_char), "%d", blockSize);
+            snprintf(sizepn_char, sizeof(sizepn_char), "%d", size/hydra_nodes);
+            strcat(file_suffix, node_char);
+            strcat(file_suffix, uline);
+            strcat(file_suffix, TCHAR);
+            strcat(file_suffix, sizepn_char);
+            strcat(file_suffix, uline);
+            strcat(file_suffix, PCHAR);
+            strcat(file_suffix, pow_char);
+            strcat(file_suffix, uline);
+            strcat(file_suffix, BSCHAR);
+            strcat(file_suffix, bs_char);
+            sprintf(file_name, "EX2_%s.txt", file_suffix);  
+            // mpicc -o Ex5 Ex5.c -lm -O3
+            // mpirun -np 8 ./Ex5 -c 50 -p 2 -b 13 -h 1 -g 1
+            fp = fopen(file_name, "w");
+            if (fp == NULL) {
+                printf("Error opening file!\n");
+            }
+        }
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
    
+    // allocate and initialize data for "correctness tests":
     sendbuf = (tuwtype_t *)malloc(count * sizeof(tuwtype_t));
     assert(sendbuf != NULL);
     recvbuf = (tuwtype_t *)malloc(count * sizeof(tuwtype_t));
@@ -146,7 +222,7 @@ int main(int argc, char *argv[])
     // "correctness test": compare against result from library function
     // MY_Reduce_T(sendbuf, testbuf, count, size, rank);
     // MY_Bcast_T(testbuf, testbuf, count, size, rank);
-    MY_Allreduce_T(sendbuf, testbuf, count, size, rank);
+    MY_Allreduce_T(sendbuf, testbuf, count, size, rank, blockSize);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
@@ -157,8 +233,56 @@ int main(int argc, char *argv[])
         // printf("rank: %d -> %f, %f\n", rank, recvbuf[i], testbuf[i]); // for debugging
     }
  
-    // TODO: add benchmarking here
+    // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
+    for (c = 1; c <= count; c *= power)
+    {
+    if (c > count) break;
+    
+    for (r = 0, t = 0; r < WARMUP+REPEAT; r++) {
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
+        
+        start = MPI_Wtime();
+        // start timing
+        MY_Allreduce_T(sendbuf, testbuf, c, size, rank, blockSize);
+        // end timing
+        stop = MPI_Wtime();
+        
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
+        if (r < WARMUP) continue;
+        runtime[t++] = stop-start;
+    }
+    MPI_Allreduce(MPI_IN_PLACE, runtime, t, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    
+    // compute mean, minimum (slowest process)
+    // compute median, CI, standard deviation
+    if (rank==0) {
+        tuwtype_t tuwavg, tuwmin;
+        tuwtype_t tuwmed, tuwstddev, CI_MOR;
+        tuwavg = 0.0; 
+        tuwmin = runtime[0]; 
 
+        for (t = 0; t < REPEAT; t++) {
+            tuwavg += runtime[t];
+            if (runtime[t]<tuwmin) tuwmin = runtime[t];
+        }
+
+        tuwavg /= REPEAT;
+        tuwmed = find_median(runtime, (size_t)REPEAT);
+        tuwstddev = find_stddev(runtime, (size_t)REPEAT, tuwavg);
+        CI_MOR = find_CI_MOR(tuwstddev, (size_t)REPEAT);
+
+        fprintf(stderr, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n", 
+            c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
+
+        if (gentxt!=0){
+        fprintf(fp, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n",
+            c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
+        }
+    }
+  }
+    // TODO: add benchmarking here
     // start timing
     // MY_Allreduce_T(sendbuf, testbuf, count, size, rank);
     // end timing
