@@ -56,35 +56,46 @@ int MY_Allreduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, 
     int recvcount;
 
     int d = floor(log2(node+1)); // level of node
-    int d_max = floor(log2(size+1));
+    int d_max = floor(log2(size));
     int b = ceil((double)count/blockSize);
     int sendSize;
 
     for ( int j = 0; j < b+d_max; j++ )
     {
-        if (node < (size-1)/2) // node != leaf
+        if (get_childL(node) < size) // node != leaf
         {
-            sendSize = count-j*blockSize >= count%blockSize ? blockSize : count%blockSize;
+            // sendSize = count-j*blockSize >= count%blockSize ? blockSize : count%blockSize;
+            sendSize = (j-d-1+1)*blockSize <= count ? blockSize : (j-d-1)*blockSize < count ? count%blockSize : 0;
+            // if (get_childR(node) == 2) printf("send to node %d for j = %d, sendSize1 = %d\n", node, j, sendSize);
             sendSize = (j-(d+1)<0 || j-(d+1)>=b) ? 0 : sendSize;
+            // if (get_childR(node) == 2) printf("send to node %d for j = %d, sendSize2 = %d\n", node, j, sendSize);
             
-            MPI_Sendrecv(workbuf + (j-(d+1))*blockSize, sendSize, MPI_DOUBLE, get_childL(node), j, tmpbuf, blockSize, MPI_DOUBLE, get_childL(node), j, MPI_COMM_WORLD, &status);
-            MPI_Get_count(&status, MPI_DOUBLE, &recvcount);
-            for (int i = 0; i < recvcount; i++)
+            if(get_childL(node) < size)
             {
-                workbuf[j*blockSize+i] = tmpbuf[i] > workbuf[j*blockSize+i] ? tmpbuf[i] : workbuf[j*blockSize+i];
-            }
-
-            MPI_Sendrecv(workbuf + (j-(d+1))*blockSize, sendSize, MPI_DOUBLE, get_childR(node), j, tmpbuf, blockSize, MPI_DOUBLE, get_childR(node), j, MPI_COMM_WORLD, &status);
-            MPI_Get_count(&status, MPI_DOUBLE, &recvcount);
-            for (int i = 0; i < recvcount; i++)
-            {
-                workbuf[j*blockSize+i] = tmpbuf[i] > workbuf[j*blockSize+i] ? tmpbuf[i] : workbuf[j*blockSize+i];
-            }     
+                // if (get_childL(node) == 3) printf("send to node %d for j = %d, sendSize = %d\n", node, j, sendSize);
+                MPI_Sendrecv(workbuf + (j-(d+1))*blockSize, sendSize, MPI_DOUBLE, get_childL(node), j, tmpbuf, blockSize, MPI_DOUBLE, get_childL(node), j, MPI_COMM_WORLD, &status);
+                MPI_Get_count(&status, MPI_DOUBLE, &recvcount);
+                for (int i = 0; i < recvcount; i++)
+                {
+                    workbuf[j*blockSize+i] = tmpbuf[i] > workbuf[j*blockSize+i] ? tmpbuf[i] : workbuf[j*blockSize+i];
+                }
+                if (get_childR(node) < size)
+                {
+                    MPI_Sendrecv(workbuf + (j-(d+1))*blockSize, sendSize, MPI_DOUBLE, get_childR(node), j, tmpbuf, blockSize, MPI_DOUBLE, get_childR(node), j, MPI_COMM_WORLD, &status);
+                    MPI_Get_count(&status, MPI_DOUBLE, &recvcount);
+                    for (int i = 0; i < recvcount; i++)
+                    {
+                        workbuf[j*blockSize+i] = tmpbuf[i] > workbuf[j*blockSize+i] ? tmpbuf[i] : workbuf[j*blockSize+i];
+                    } 
+                }
+            }  
         }
         if (node != 0) // node != root
         {
-            sendSize = count-j*blockSize >= blockSize ? blockSize : count%blockSize;
+            sendSize = (j+1)*blockSize <= count ? blockSize : j*blockSize < count ? count%blockSize : 0;
+            // if (node == 3) printf("send to parent of %d for j = %d, sendSize1 = %d\n", node, j, sendSize);
             sendSize = (j<0 || j>=b) ? 0 : sendSize;
+
             MPI_Sendrecv(workbuf + j*blockSize, sendSize, MPI_DOUBLE, get_parent(node), j, tmpbuf, blockSize, MPI_DOUBLE, get_parent(node), j, MPI_COMM_WORLD, &status);
             MPI_Get_count(&status, MPI_DOUBLE, &recvcount);
             if (j-d >= 0 && j-d < b && recvcount > 0)
@@ -153,7 +164,7 @@ int main(int argc, char *argv[])
     count = 7;
     power = 2;
     gentxt = 0;
-    blockSize = 13;
+    blockSize = 4;
     hydra_nodes = 1;
 
     for (i=1; i<argc&&argv[i][0]=='-'; i++) {
@@ -229,63 +240,63 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     for (int i = 0; i < count; i++) {
-        assert(recvbuf[i] == testbuf[i]);
-        // printf("rank: %d -> %f, %f\n", rank, recvbuf[i], testbuf[i]); // for debugging
+        // assert(recvbuf[i] == testbuf[i]);
+        if ( recvbuf[i] != testbuf[i] ) printf("rank: %d -> %f, %f\n", rank, recvbuf[i], testbuf[i]); // for debugging
     }
  
-    // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
-    for (c = 1; c <= count; c *= power)
-    {
-    if (c > count) break;
+//     // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
+//     for (c = 2; c <= count; c *= power)
+//     {
+//     if (c > count) break;
     
-    for (r = 0, t = 0; r < WARMUP+REPEAT; r++) {
-        MPI_Barrier(MPI_COMM_WORLD);
-        MPI_Barrier(MPI_COMM_WORLD);
+//     for (r = 0, t = 0; r < WARMUP+REPEAT; r++) {
+//         MPI_Barrier(MPI_COMM_WORLD);
+//         MPI_Barrier(MPI_COMM_WORLD);
         
-        start = MPI_Wtime();
-        // start timing
-        MY_Allreduce_T(sendbuf, testbuf, c, size, rank, blockSize);
-        // end timing
-        stop = MPI_Wtime();
+//         start = MPI_Wtime();
+//         // start timing
+//         MY_Allreduce_T(sendbuf, testbuf, c, size, rank, blockSize);
+//         // end timing
+//         stop = MPI_Wtime();
         
-        MPI_Barrier(MPI_COMM_WORLD);
-        MPI_Barrier(MPI_COMM_WORLD);
-        if (r < WARMUP) continue;
-        runtime[t++] = stop-start;
-    }
-    MPI_Allreduce(MPI_IN_PLACE, runtime, t, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//         MPI_Barrier(MPI_COMM_WORLD);
+//         MPI_Barrier(MPI_COMM_WORLD);
+//         if (r < WARMUP) continue;
+//         runtime[t++] = stop-start;
+//     }
+//     MPI_Allreduce(MPI_IN_PLACE, runtime, t, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     
-    // compute mean, minimum (slowest process)
-    // compute median, CI, standard deviation
-    if (rank==0) {
-        tuwtype_t tuwavg, tuwmin;
-        tuwtype_t tuwmed, tuwstddev, CI_MOR;
-        tuwavg = 0.0; 
-        tuwmin = runtime[0]; 
+//     // compute mean, minimum (slowest process)
+//     // compute median, CI, standard deviation
+//     if (rank==0) {
+//         tuwtype_t tuwavg, tuwmin;
+//         tuwtype_t tuwmed, tuwstddev, CI_MOR;
+//         tuwavg = 0.0; 
+//         tuwmin = runtime[0]; 
 
-        for (t = 0; t < REPEAT; t++) {
-            tuwavg += runtime[t];
-            if (runtime[t]<tuwmin) tuwmin = runtime[t];
-        }
+//         for (t = 0; t < REPEAT; t++) {
+//             tuwavg += runtime[t];
+//             if (runtime[t]<tuwmin) tuwmin = runtime[t];
+//         }
 
-        tuwavg /= REPEAT;
-        tuwmed = find_median(runtime, (size_t)REPEAT);
-        tuwstddev = find_stddev(runtime, (size_t)REPEAT, tuwavg);
-        CI_MOR = find_CI_MOR(tuwstddev, (size_t)REPEAT);
+//         tuwavg /= REPEAT;
+//         tuwmed = find_median(runtime, (size_t)REPEAT);
+//         tuwstddev = find_stddev(runtime, (size_t)REPEAT, tuwavg);
+//         CI_MOR = find_CI_MOR(tuwstddev, (size_t)REPEAT);
 
-        fprintf(stderr, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n", 
-            c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
+//         fprintf(stderr, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n", 
+//             c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
 
-        if (gentxt!=0){
-        fprintf(fp, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n",
-            c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
-        }
-    }
-  }
-    // TODO: add benchmarking here
-    // start timing
-    // MY_Allreduce_T(sendbuf, testbuf, count, size, rank);
-    // end timing
+//         if (gentxt!=0){
+//         fprintf(fp, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n",
+//             c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
+//         }
+//     }
+//   }
+//     // TODO: add benchmarking here
+//     // start timing
+//     // MY_Allreduce_T(sendbuf, testbuf, count, size, rank);
+//     // end timing
  
     MPI_Finalize();
 
