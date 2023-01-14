@@ -1,7 +1,3 @@
-/* (C) Jesper Larsson Traff, October 2022 */
-/* Alltoall algorithms for fully connected networks */
-/* Example code for HPC 2022, see script Section 7.2 */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,17 +7,6 @@
 
 #include <mpi.h>
 
-
-/* Algorithm selection done at compile time */
-// #ifndef ALLTOALL
-// #define ALLTOALL Alltoall_fully
-// // #define ALLTOALL Alltoall_telephone
-// // #define ALLTOALL Alltoall_factor
-// // #define ALLTOALL MPI_Alltoall
-// #endif
-
-// #define ALLTOALLTAG 7777
-
 // Benchmarking parameters
 #define WARMUP 8
 #define REPEAT 40
@@ -29,8 +14,6 @@
 
 #define TUW_TYPE MPI_DOUBLE
 typedef double tuwtype_t;
-
-// #define FLIP(_fac, _mul1, _mul2) (_fac = ((_fac == _mul1) ? (_mul2) : (_mul1)))
 
 #define blockSize 4
 
