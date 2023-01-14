@@ -159,6 +159,10 @@ int main(int argc, char *argv[])
     }
  
     // TODO: add benchmarking here
+
+    // start timing
+    // MY_Allreduce_T(sendbuf, testbuf, count, size, rank);
+    // end timing
  
     MPI_Finalize();
 
