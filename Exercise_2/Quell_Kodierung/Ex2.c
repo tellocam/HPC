@@ -190,9 +190,6 @@ int main(int argc, char *argv[])
     int i, r, t;
     tuwtype_t *runtime;
     runtime = (tuwtype_t*)malloc(REPEAT * sizeof(tuwtype_t));
-
-
-    runtime = (tuwtype_t*)malloc(REPEAT * sizeof(tuwtype_t));
     assert(runtime!=0);
 
     MPI_Init(&argc, &argv);
@@ -211,10 +208,8 @@ int main(int argc, char *argv[])
     if (argv[i][1]=='h') i++, sscanf(argv[i], "%d", &hydra_nodes); // commandline arg. -b for adjusting blocksize, if none given blockSize = 4
     if (argv[i][1]=='g') i++, sscanf(argv[i], "%d", &gentxt); // commandline arg. -g for generating a txt, if none given, no .txt
     }
-
-    /* 
-    mpirun -np 8 ./Ex2 -c 50 -p 2 -b 4 -h 1 -g 1
-    */
+    // mpirun -np 8 ./Ex2 -c 50 -p 2 -b 4 -h 1 -g 1
+  
 
     FILE *fp; // file pointer
     // Filenaming is: "EX1_N36_T32_P2.txt" Where N36 = 36 Nodes, T32 = 32 Task per Node, P2 = Powers of 2
