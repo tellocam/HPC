@@ -3,7 +3,7 @@ timestr="--time=5:00"
 studstr="-p q_student"
 mcount=10000000
 
-for Nodes in 1 20 32
+for Nodes in 1 20 36
 do
 
     for tasksPerNode in 1 16 32

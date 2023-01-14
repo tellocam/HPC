@@ -27,6 +27,19 @@
 #define REPEAT 100
 #define MICRO  1000000.0
 
+// Character arrays for filenaming
+char file_name[128];
+char file_suffix[64];
+char node_char[16];
+char sizepn_char[16];
+char pow_char[16];
+char bs_char[16];
+char uline[16] = "_";
+char NCHAR[16] = "N";
+char TCHAR[16] = "T";
+char PCHAR[16] = "P";
+char BSCHAR[16] = "B";
+
 #define TUW_TYPE MPI_DOUBLE
 typedef double tuwtype_t;
 
@@ -115,23 +128,21 @@ int main(int argc, char *argv[])
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
   FILE *fp; // file pointer
+  // Filenaming is: "EX1_N36_T32_P2.txt" Where N36 = 36 Nodes, T32 = 32 Task per Node, P2 = Powers of 2
   if(rank==0){
       if (gentxt!=0){
-        char file_name[127];
-        char file_suffix[64];
-        char sizepn_char[8];
-        char pow_char[8];
-        char uline[8] = "_";
-        sprintf(file_suffix, "%d", hydra_nodes);
+        sprintf(file_suffix, "%s", NCHAR);
+        snprintf(node_char, sizeof(node_char), "%d", hydra_nodes);
         snprintf(pow_char, sizeof(pow_char), "%d", power);
         snprintf(sizepn_char, sizeof(sizepn_char), "%d", size/hydra_nodes);
+        strcat(file_suffix, node_char);
         strcat(file_suffix, uline);
+        strcat(file_suffix, TCHAR);
         strcat(file_suffix, sizepn_char);
         strcat(file_suffix, uline);
+        strcat(file_suffix, PCHAR);
         strcat(file_suffix, pow_char);
         sprintf(file_name, "EX1_%s.txt", file_suffix);  
-        // filename is gonna be like "EX1_<nodes>_<processesPerNode>_<Power>.txt"
-        // be careful to always hand over the -h commandline argument when running on multiple nodes, its just gonna be used for .txt file suffix!
         // mpirun -np 8 ./Ex1 -c 50 -p 2 -h 1 -g 1
         fp = fopen(file_name, "w");
         if (fp == NULL) {
