@@ -1,7 +1,3 @@
-/* (C) Jesper Larsson Traff, October 2022 */
-/* Alltoall algorithms for fully connected networks */
-/* Example code for HPC 2022, see script Section 7.2 */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,18 +6,6 @@
 #include <assert.h>
 
 #include <mpi.h>
-
-// #include <iostream>
-
-/* Algorithm selection done at compile time */
-// #ifndef ALLTOALL
-// #define ALLTOALL Alltoall_fully
-// // #define ALLTOALL Alltoall_telephone
-// // #define ALLTOALL Alltoall_factor
-// // #define ALLTOALL MPI_Alltoall
-// #endif
-
-// #define ALLTOALLTAG 7777
 
 // Benchmarking parameters
 #define WARMUP 8
@@ -42,7 +26,6 @@ int get_childL(int id)
 {
     return id+1;
 }
-
 
 int MY_Allreduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int node)
 {
@@ -66,7 +49,6 @@ int MY_Allreduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, 
     {
         if (node < size-1) // node != leaf
         {
-            // j = j-d-1
             sendSize = (j-d-1+1)*blockSize < count ? blockSize : (j-d-1)*blockSize < count ? count%blockSize : 0;
             sendSize = (j-(d+1)<0 || j-(d+1)>=b) ? 0 : sendSize;
             
@@ -76,16 +58,9 @@ int MY_Allreduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, 
             {
                 workbuf[j*blockSize+i] = tmpbuf[i] > workbuf[j*blockSize+i] ? tmpbuf[i] : workbuf[j*blockSize+i];
             }
-            // for debugging
-            // printf("tochild - rank: %d, j: %d, recv: %d, recvct: %d, send: %d, sendct: %d\n", node, j, j*blockSize, recvcount, (j-(d+1))*blockSize, sendSize);
-
         }
         if (node != 0) // node != root
         {
-            // 1. if ((j+1)*blockSize < count ) -> sendSize = blockSize
-            // 2. else if (j*blockSize <count-1 ) -> count%blockSize
-            // 3. else sendSize = 0
-
             sendSize = (j+1)*blockSize < count ? blockSize : j*blockSize < count ? count%blockSize : 0;
             sendSize = (j<0 || j>=b) ? 0 : sendSize;
             MPI_Sendrecv(workbuf + j*blockSize, sendSize, MPI_DOUBLE, get_parent(node), j, tmpbuf, blockSize, MPI_DOUBLE, get_parent(node), j, MPI_COMM_WORLD, &status);
@@ -94,8 +69,6 @@ int MY_Allreduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, 
             {
                 memcpy(&workbuf[(j-d)*blockSize], tmpbuf, sizeof(tuwtype_t)*recvcount);
             }
-            // for debugging
-            // printf("toparnt - rank: %d, j: %d, recv: %d, recvct: %d, send: %d, sendct: %d\n", node, j, (j-d)*blockSize, recvcount, j*blockSize, sendSize);
         }
     }
 
@@ -142,9 +115,6 @@ int main(int argc, char *argv[])
     for (int i = 0; i < count; i++)
         testbuf[i] = (tuwtype_t)-1;
 
-    // "correctness test": compare against result from library function
-    // MY_Reduce_T(sendbuf, testbuf, count, size, rank);
-    // MY_Bcast_T(testbuf, testbuf, count, size, rank);
     MY_Allreduce_P(sendbuf, testbuf, count, size, rank);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
