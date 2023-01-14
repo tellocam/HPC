@@ -1,7 +1,3 @@
-/* (C) Jesper Larsson Traff, October 2022 */
-/* Alltoall algorithms for fully connected networks */
-/* Example code for HPC 2022, see script Section 7.2 */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,8 +25,6 @@ char BSCHAR[16] = "B";
 
 #define TUW_TYPE MPI_DOUBLE
 typedef double tuwtype_t;
-
-// #define FLIP(_fac, _mul1, _mul2) (_fac = ((_fac == _mul1) ? (_mul2) : (_mul1)))
 
 #define blockSize 4
 
