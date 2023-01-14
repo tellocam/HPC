@@ -12,6 +12,19 @@
 #define REPEAT 40
 #define MICRO 1000000.0
 
+// Character arrays for filenaming
+char file_name[128];
+char file_suffix[64];
+char node_char[16];
+char sizepn_char[16];
+char pow_char[16];
+char bs_char[16];
+char uline[16] = "_";
+char NCHAR[16] = "N";
+char TCHAR[16] = "T";
+char PCHAR[16] = "P";
+char BSCHAR[16] = "B";
+
 #define TUW_TYPE MPI_DOUBLE
 typedef double tuwtype_t;
 
@@ -201,47 +214,36 @@ int main(int argc, char *argv[])
 
     /* 
     mpirun -np 8 ./Ex2 -c 50 -p 2 -b 4 -h 1 -g 1
-    here a commandline example which executes the binary with 8 MPI Processes, max. count of 50, iterators raised to the power of 2
-    pipelining blocksize of 2 and will generate a .txt file with commas as value separators.
     */
 
     FILE *fp; // file pointer
+    // Filenaming is: "EX1_N36_T32_P2.txt" Where N36 = 36 Nodes, T32 = 32 Task per Node, P2 = Powers of 2
     if(rank==0){
-
-    /*
-    If Commandline argument -g is not 0, this will generate a txt file of following form: EX2_8_2_4.txt
-    EX2 obviously stands for exercise 2, the first number after that 8 in this case, is the number
-    of MPI Processes. The second number, 2 in this case, is the power to which every iteration number is raised.
-    The last number, 4 in this case, is the blockSize which is the size of the pipelining packages!
-    */
-
-    if (gentxt!=0){
-        char file_name[127];
-        char file_suffix[64];
-        char sizepn_char[8];
-        char pow_char[8];
-        char blockSize_char[8];
-        char uline[8] = "_";
-        sprintf(file_suffix, "%d", hydra_nodes);
-        snprintf(sizepn_char, sizeof(sizepn_char), "%d", size/hydra_nodes);
-        snprintf(pow_char, sizeof(pow_char), "%d", power);
-        snprintf(blockSize_char, sizeof(blockSize_char), "%d", blockSize);
-        strcat(file_suffix, uline);
-        strcat(file_suffix, sizepn_char);
-        strcat(file_suffix, uline);
-        strcat(file_suffix, pow_char);
-        strcat(file_suffix, uline);
-        strcat(file_suffix, blockSize_char);
-        sprintf(file_name, "EX2_%s.txt", file_suffix);
-        // filename is gonna be like "EX1_<nodes>_<processesPerNode>_<power>_<blockSize>.txt"
-        // be careful to always hand over the -h commandline argument when running on multiple nodes, its just gonna be used for .txt file suffix!
-        // mpirun -np 8 ./Ex2 -c 50 -p 2 -b 4 -h 2 -g 1
-        fp = fopen(file_name, "w");
-        if (fp == NULL) {
-        printf("Error opening file!\n");
+        if (gentxt!=0){
+            sprintf(file_suffix, "%s", NCHAR);
+            snprintf(node_char, sizeof(node_char), "%d", hydra_nodes);
+            snprintf(pow_char, sizeof(pow_char), "%d", power);
+            snprintf(bs_char, sizeof(bs_char), "%d", blockSize);
+            snprintf(sizepn_char, sizeof(sizepn_char), "%d", size/hydra_nodes);
+            strcat(file_suffix, node_char);
+            strcat(file_suffix, uline);
+            strcat(file_suffix, TCHAR);
+            strcat(file_suffix, sizepn_char);
+            strcat(file_suffix, uline);
+            strcat(file_suffix, PCHAR);
+            strcat(file_suffix, pow_char);
+            strcat(file_suffix, uline);
+            strcat(file_suffix, BSCHAR);
+            strcat(file_suffix, bs_char);
+            sprintf(file_name, "EX2_%s.txt", file_suffix);  
+            // mpirun -np 8 ./Ex2 -c 50 -h 1 -p 1 -b 4 -g 1
+            fp = fopen(file_name, "w");
+            if (fp == NULL) {
+                printf("Error opening file!\n");
+            }
         }
     }
-  }
+
     // allocate and initialize data for "correctness tests":
     sendbuf = (tuwtype_t *)malloc(count * sizeof(tuwtype_t));
     assert(sendbuf != NULL);

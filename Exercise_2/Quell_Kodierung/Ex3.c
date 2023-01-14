@@ -6,27 +6,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-
 #include <assert.h>
-
 #include <mpi.h>
-
-// #include <iostream>
-
-/* Algorithm selection done at compile time */
-// #ifndef ALLTOALL
-// #define ALLTOALL Alltoall_fully
-// // #define ALLTOALL Alltoall_telephone
-// // #define ALLTOALL Alltoall_factor
-// // #define ALLTOALL MPI_Alltoall
-// #endif
-
-// #define ALLTOALLTAG 7777
 
 // Benchmarking parameters
 #define WARMUP 8
 #define REPEAT 40
 #define MICRO 1000000.0
+
+// Character arrays for filenaming
+char file_name[128];
+char file_suffix[64];
+char node_char[16];
+char sizepn_char[16];
+char pow_char[16];
+char bs_char[16]
+char uline[16] = "_";
+char NCHAR[16] = "N";
+char TCHAR[16] = "T";
+char PCHAR[16] = "P";
+char BSCHAR[16] = "B";
 
 #define TUW_TYPE MPI_DOUBLE
 typedef double tuwtype_t;
@@ -42,7 +41,6 @@ int get_childL(int id)
 {
     return id+1;
 }
-
 
 int MY_Allreduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int node)
 {
