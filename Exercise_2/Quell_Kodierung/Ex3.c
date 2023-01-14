@@ -44,7 +44,7 @@ int get_childL(int id)
 }
 
 
-int MY_Allreduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int node)
+int MY_Allreduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int node)
 {
     // workbuf is what will be worked on (Y from algorithm)
     // Start: workbuf = sendbuf
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
     // "correctness test": compare against result from library function
     // MY_Reduce_T(sendbuf, testbuf, count, size, rank);
     // MY_Bcast_T(testbuf, testbuf, count, size, rank);
-    MY_Allreduce_T(sendbuf, testbuf, count, size, rank);
+    MY_Allreduce_P(sendbuf, testbuf, count, size, rank);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
@@ -157,6 +157,12 @@ int main(int argc, char *argv[])
     }
  
     // TODO: add benchmarking here
+
+    // start timing
+    // MY_Allreduce_P(sendbuf, testbuf, count, size, rank);
+    // end timing
+
+
  
     MPI_Finalize();
 
