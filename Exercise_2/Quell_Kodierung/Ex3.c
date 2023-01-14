@@ -94,7 +94,6 @@ int cmp_tuwtype(const void *a, const void *b) {
   return (da > db) - (da < db);
 }
 
-// Find median function
 tuwtype_t find_median(tuwtype_t *runtime, size_t N){
   tuwtype_t *runtime_copy = malloc(N * sizeof(tuwtype_t));
   memcpy(runtime_copy, runtime, N * sizeof(tuwtype_t));
@@ -208,6 +207,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < count; i++)
         testbuf[i] = (tuwtype_t)-1;
 
+    // "correctness test": compare against result from library function
     MY_Allreduce_P(sendbuf, testbuf, count, size, rank, blockSize);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
