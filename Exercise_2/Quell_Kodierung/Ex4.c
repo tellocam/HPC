@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
 
-    count = 10;
+    count = 7;
    
     sendbuf = (tuwtype_t *)malloc(count * sizeof(tuwtype_t));
     assert(sendbuf != NULL);
@@ -244,6 +244,11 @@ int main(int argc, char *argv[])
     }
  
     // TODO: add benchmarking here
+
+    // start timing
+    // MY_Reduce_T(sendbuf, testbuf1, count, size, rank);
+    // MY_Bcast_T(testbuf1, testbuf, count, size, rank);
+    // end timing
  
     MPI_Finalize();
 
