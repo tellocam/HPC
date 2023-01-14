@@ -94,25 +94,38 @@ int MY_Reduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int
     }
     else // node == interior
     {
-        MPI_Recv(tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Recv(tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        for (int j = 0; j < blockSize; j++)
+        for (int j = 0; j < blockSize; j++) 
         {
-            recvbuf[j] = tmpbufL[j] > sendbuf[j] ? tmpbufL[j] : sendbuf[j];
-            recvbuf[j] = tmpbufR[j] > recvbuf[j] ? tmpbufR[j] : recvbuf[j];
-        }
-        for (int b = blockSize; b < trunc_chunk_idx; b += blockSize)
-        {
-            MPI_Sendrecv(recvbuf + b - blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0, tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            MPI_Sendrecv(recvbuf + b - blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0, tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int j = 0; j < blockSize; j++)
             {
-                recvbuf[b+j] = tmpbufL[j] > sendbuf[b+j] ? tmpbufL[j] : sendbuf[b+j];
-                recvbuf[b+j] = tmpbufR[j] > recvbuf[b+j] ? tmpbufR[j] : recvbuf[b+j];
+                recvbuf[j] = tmpbufL[j] > sendbuf[j] ? tmpbufL[j] : sendbuf[j];
+                recvbuf[j] = tmpbufR[j] > recvbuf[j] ? tmpbufR[j] : recvbuf[j];
             }
+            MPI_Send(recvbuf + j*blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
         }
-        MPI_Send(recvbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
-        if(count%blockSize != 0){
+
+        // MPI_Recv(tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        // MPI_Recv(tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        // for (int j = 0; j < blockSize; j++)
+        // {
+        //     recvbuf[j] = tmpbufL[j] > sendbuf[j] ? tmpbufL[j] : sendbuf[j];
+        //     recvbuf[j] = tmpbufR[j] > recvbuf[j] ? tmpbufR[j] : recvbuf[j];
+        // }
+        // for (int b = blockSize; b < trunc_chunk_idx; b += blockSize)
+        // {
+        //     MPI_Sendrecv(recvbuf + b - blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0, tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        //     MPI_Sendrecv(recvbuf + b - blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0, tmpbufR, blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        //     for (int j = 0; j < blockSize; j++)
+        //     {
+        //         recvbuf[b+j] = tmpbufL[j] > sendbuf[b+j] ? tmpbufL[j] : sendbuf[b+j];
+        //         recvbuf[b+j] = tmpbufR[j] > recvbuf[b+j] ? tmpbufR[j] : recvbuf[b+j];
+        //     }
+        // }
+        // MPI_Send(recvbuf + (int)(floor(count/blockSize)-1)*blockSize, blockSize, MPI_DOUBLE, get_parent(node), 0 , MPI_COMM_WORLD);
+        if(count%blockSize != 0)
+        {
             MPI_Recv(tmpbufL_trunc, count%blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             MPI_Recv(tmpbufR_trunc, count%blockSize, MPI_DOUBLE, get_childR(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             for (int j = 0; j < count % blockSize; j++)
@@ -211,9 +224,9 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < count; i++)
         // sendbuf[i] = (tuwtype_t)i;
-        // sendbuf[i] = (tuwtype_t)i*(rank+1);
+        sendbuf[i] = (tuwtype_t)i*(rank+1);
         // sendbuf[i] = (tuwtype_t)i*(size-rank);
-        sendbuf[i] = (tuwtype_t)((i*(rank+1))%3);
+        // sendbuf[i] = (tuwtype_t)((i*(rank+1))%3);
     for (int i = 0; i < count; i++)
         recvbuf[i] = (tuwtype_t)-1;
     for (int i = 0; i < count; i++)

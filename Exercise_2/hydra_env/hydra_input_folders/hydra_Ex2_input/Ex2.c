@@ -1,3 +1,7 @@
+/* (C) Jesper Larsson Traff, October 2022 */
+/* Alltoall algorithms for fully connected networks */
+/* Example code for HPC 2022, see script Section 7.2 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +10,17 @@
 #include <assert.h>
 
 #include <mpi.h>
+
+
+// /* Algorithm selection done at compile time */
+// #ifndef ALLTOALL
+// #define ALLTOALL Alltoall_fully
+// // #define ALLTOALL Alltoall_telephone
+// // #define ALLTOALL Alltoall_factor
+// // #define ALLTOALL MPI_Alltoall
+// #endif
+
+// #define ALLTOALLTAG 7777
 
 // Benchmarking parameters
 #define WARMUP 8
@@ -83,9 +98,14 @@ int MY_Reduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int
     return MPI_SUCCESS;
 }
 
+
+
 int MY_Bcast_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int rank, int blockSize)
 {
     int trunc_chunk_idx = floor(count/blockSize)*blockSize; // index of first truncated chunk.. yes funny.
+    //tuwtype_t *tmpbuf = (tuwtype_t *)malloc(blockSize * sizeof(tuwtype_t));
+    //tuwtype_t *tmpbuf_trunc = (tuwtype_t *)malloc(count%blockSize * sizeof(tuwtype_t));
+    //tuwtype_t tmp;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Pipelined Bcast [traeff_lecturenotes]
@@ -326,7 +346,9 @@ int main(int argc, char *argv[])
         fprintf(fp, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n",
           c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
       }
+      
     }
+  
   }
 
   if(gentxt!=0){
