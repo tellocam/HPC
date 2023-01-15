@@ -26,6 +26,16 @@ char BSCHAR[16] = "B";
 #define TUW_TYPE MPI_DOUBLE
 typedef double tuwtype_t;
 
+int get_blockSize(int count){
+    if (count < 1e4){
+        return 1e2;
+    }
+    else if (count < 1e6){
+        return 1e3;
+    }
+    else return 1e6;
+}
+
 int get_parent(int id)
 {
     return floor((id-1)/2);
@@ -164,7 +174,7 @@ int main(int argc, char *argv[])
     count = 7;
     power = 2;
     gentxt = 0;
-    blockSize = 4;
+    blockSize = 100;
     hydra_nodes = 1;
 
     for (i=1; i<argc&&argv[i][0]=='-'; i++) {
@@ -177,12 +187,12 @@ int main(int argc, char *argv[])
 
     if(rank == 0){
         //printf("----- \n Number of processors must be of size 2^n-1. \n----- \n");
-        fprintf(stderr,"Results for Ex5 with %d Processes, on %d Nodes with Blocksize %d and powers of %d \n",size/hydra_nodes, hydra_nodes, blockSize, power); 
+        fprintf(stderr,"Results for Ex5 with %d Processes, on %d Nodes with variable blockSize and powers of %d \n",size/hydra_nodes, hydra_nodes, power); 
         fprintf(stderr,"count, m (Bytes), avg, min, median, stddev,  CIMOE \n");
     }
 
     FILE *fp; // file pointer
-    // Filenaming is: "EX1_N36_T32_P2.txt" Where N36 = 36 Nodes, T32 = 32 Task per Node, P2 = Powers of 2
+    // Filenaming is: "EX5_N36_T32_P2.txt" Where N36 = 36 Nodes, T32 = 32 Task per Node, P2 = Powers of 2
     if(rank==0){
         if (gentxt!=0){
             sprintf(file_suffix, "%s", NCHAR);
@@ -197,10 +207,10 @@ int main(int argc, char *argv[])
             strcat(file_suffix, uline);
             strcat(file_suffix, PCHAR);
             strcat(file_suffix, pow_char);
-            strcat(file_suffix, uline);
-            strcat(file_suffix, BSCHAR);
-            strcat(file_suffix, bs_char);
-            sprintf(file_name, "EX2_%s.txt", file_suffix);  
+            // strcat(file_suffix, uline);
+            // strcat(file_suffix, BSCHAR);    // commentend out bcs blocksize is variable now!
+            // strcat(file_suffix, bs_char);
+            sprintf(file_name, "EX5_%s.txt", file_suffix);  
             // mpicc -o Ex5 Ex5.c -lm -O3
             // mpirun -np 8 ./Ex5 -c 50 -p 2 -b 13 -h 1 -g 1
             fp = fopen(file_name, "w");
@@ -233,7 +243,7 @@ int main(int argc, char *argv[])
     // "correctness test": compare against result from library function
     // MY_Reduce_T(sendbuf, testbuf, count, size, rank);
     // MY_Bcast_T(testbuf, testbuf, count, size, rank);
-    MY_Allreduce_T(sendbuf, testbuf, count, size, rank, blockSize);
+    MY_Allreduce_T(sendbuf, testbuf, count, size, rank, get_blockSize(count));
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
@@ -255,7 +265,7 @@ int main(int argc, char *argv[])
         
         start = MPI_Wtime();
         // start timing
-        MY_Allreduce_T(sendbuf, testbuf, c, size, rank, blockSize);
+        MY_Allreduce_T(sendbuf, testbuf, c, size, rank, get_blockSize(c));
         // end timing
         stop = MPI_Wtime();
         

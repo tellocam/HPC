@@ -1,13 +1,13 @@
 cs="--cpu-freq=High"
 ts="--time=5:00"
 ss="-p q_student"
-bs=4 # blockSize
-mc=1000 # max. Count
+bs=100 # blockSize not relevant anymore!
+mc=10000000 # max. Count
 
-for Nd in 1 20 36 # Hydra Nodes
+for Nd in 4 20 36 # Hydra Nodes
 do
 
-    for TPN in 1 16 32 # Tasks Per Node
+    for TPN in 4 16 32 # Tasks Per Node
     do
 
         if [ "$TPN" -ne "1" ] || [ "$Nd" -ne "1" ];

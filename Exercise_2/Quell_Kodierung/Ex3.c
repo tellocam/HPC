@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
     // mpirun -np 8 ./Ex3 -c 50 -p 2 -b 4 -h 1 -g 1
 
     FILE *fp; // file pointer
-    // Filenaming is: "EX1_N36_T32_P2.txt" Where N36 = 36 Nodes, T32 = 32 Task per Node, P2 = Powers of 2
+    // Filenaming is: "EX3_N36_T32_P2.txt" Where N36 = 36 Nodes, T32 = 32 Task per Node, P2 = Powers of 2
     if(rank==0){
         if (gentxt!=0){
             sprintf(file_suffix, "%s", NCHAR);
@@ -187,10 +187,10 @@ int main(int argc, char *argv[])
             strcat(file_suffix, uline);
             strcat(file_suffix, PCHAR);
             strcat(file_suffix, pow_char);
-            strcat(file_suffix, uline);
-            strcat(file_suffix, BSCHAR);
-            strcat(file_suffix, bs_char);
-            sprintf(file_name, "EX2_%s.txt", file_suffix); 
+            //strcat(file_suffix, uline);
+            //strcat(file_suffix, BSCHAR);    // commentend out bcs blocksize is variable now!
+            //strcat(file_suffix, bs_char);
+            sprintf(file_name, "EX3_%s.txt", file_suffix); 
             // mpicc -o Ex3 Ex3.c -lm O3 
             // mpirun -np 8 ./Ex3 -c 50 -p 2 -b 4 -h 1 -g 1
             fp = fopen(file_name, "w");

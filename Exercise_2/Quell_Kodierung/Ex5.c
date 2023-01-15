@@ -187,12 +187,12 @@ int main(int argc, char *argv[])
 
     if(rank == 0){
         //printf("----- \n Number of processors must be of size 2^n-1. \n----- \n");
-        fprintf(stderr,"Results for Ex5 with %d Processes, on %d Nodes with Blocksize %d and powers of %d \n",size/hydra_nodes, hydra_nodes, blockSize, power); 
+        fprintf(stderr,"Results for Ex5 with %d Processes, on %d Nodes with variable blockSize and powers of %d \n",size/hydra_nodes, hydra_nodes, power); 
         fprintf(stderr,"count, m (Bytes), avg, min, median, stddev,  CIMOE \n");
     }
 
     FILE *fp; // file pointer
-    // Filenaming is: "EX1_N36_T32_P2.txt" Where N36 = 36 Nodes, T32 = 32 Task per Node, P2 = Powers of 2
+    // Filenaming is: "EX5_N36_T32_P2.txt" Where N36 = 36 Nodes, T32 = 32 Task per Node, P2 = Powers of 2
     if(rank==0){
         if (gentxt!=0){
             sprintf(file_suffix, "%s", NCHAR);
@@ -207,10 +207,10 @@ int main(int argc, char *argv[])
             strcat(file_suffix, uline);
             strcat(file_suffix, PCHAR);
             strcat(file_suffix, pow_char);
-            strcat(file_suffix, uline);
-            strcat(file_suffix, BSCHAR);
-            strcat(file_suffix, bs_char);
-            sprintf(file_name, "EX2_%s.txt", file_suffix);  
+            // strcat(file_suffix, uline);
+            // strcat(file_suffix, BSCHAR);    // commentend out bcs blocksize is variable now!
+            // strcat(file_suffix, bs_char);
+            sprintf(file_name, "EX5_%s.txt", file_suffix);  
             // mpicc -o Ex5 Ex5.c -lm -O3
             // mpirun -np 8 ./Ex5 -c 50 -p 2 -b 13 -h 1 -g 1
             fp = fopen(file_name, "w");

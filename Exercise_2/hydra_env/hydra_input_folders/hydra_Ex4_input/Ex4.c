@@ -26,6 +26,16 @@ char BSCHAR[16] = "B";
 #define TUW_TYPE MPI_DOUBLE
 typedef double tuwtype_t;
 
+int get_blockSize(int count){
+    if (count < 1e4){
+        return 1e2;
+    }
+    else if (count < 1e6){
+        return 1e3;
+    }
+    else return 1e6;
+}
+
 int get_parent(int id)
 {
     return floor((id-1)/2);
@@ -53,8 +63,10 @@ int MY_Reduce_T(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, int
     // rank = node (= id)
     if (node == 0) // node == root
     {
+        memcpy(&recvbuf[0], sendbuf, count * sizeof(tuwtype_t)); 
         for (int b = 0; b < trunc_chunk_idx; b += blockSize)
         {
+
             if (get_childL(node) < size)
             {
                 MPI_Recv(tmpbufL, blockSize, MPI_DOUBLE, get_childL(node), 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
@@ -299,7 +311,7 @@ int main(int argc, char *argv[])
     count = 10;
     power = 2;
     gentxt = 0;
-    blockSize = 4;
+    blockSize = 100;
     hydra_nodes = 1;
 
     for (i=1; i<argc&&argv[i][0]=='-'; i++) {
@@ -312,7 +324,7 @@ int main(int argc, char *argv[])
 
     if(rank == 0){
         //printf("----- \n Number of processors must be of size 2^n-1. \n----- \n");
-        fprintf(stderr,"Results for Ex4 with %d Processes, on %d Nodes with Blocksize %d and powers of %d \n",size/hydra_nodes, hydra_nodes, blockSize, power); 
+        fprintf(stderr,"Results for Ex4 with %d Processes, on %d Nodes with variable Blocksize and powers of %d \n",size/hydra_nodes, hydra_nodes, power); 
         fprintf(stderr,"count, m (Bytes), avg, min, median, stddev,  CIMOE \n");
     }
     // mpirun -np 8 ./Ex4 -c 50 -p 2 -b 4 -h 1 -g 1
@@ -333,10 +345,10 @@ int main(int argc, char *argv[])
             strcat(file_suffix, uline);
             strcat(file_suffix, PCHAR);
             strcat(file_suffix, pow_char);
-            strcat(file_suffix, uline);
-            strcat(file_suffix, BSCHAR);
-            strcat(file_suffix, bs_char);
-            sprintf(file_name, "EX2_%s.txt", file_suffix);  
+            //strcat(file_suffix, uline);
+            //strcat(file_suffix, BSCHAR);    // commentend out bcs blocksize is variable now!
+            //strcat(file_suffix, bs_char);
+            sprintf(file_name, "EX4_%s.txt", file_suffix);  
             // mpicc -o Ex4 Ex4.c -lm -O3
             // mpirun -np 8 ./Ex4 -c 50 -h 1 -p 2 -b 4 -g 1
             fp = fopen(file_name, "w");
@@ -370,15 +382,15 @@ int main(int argc, char *argv[])
         testbuf[i] = (tuwtype_t)-1;
 
     // "correctness test": compare against result from library function
-    MY_Reduce_T(sendbuf, testbuf1, count, size, rank, blockSize);
-    MY_Bcast_T(testbuf1, testbuf, count, size, rank, blockSize);
+    MY_Reduce_T(sendbuf, testbuf1, count, size, rank, get_blockSize(count));
+    MY_Bcast_T(testbuf1, testbuf, count, size, rank, get_blockSize(count));
     MPI_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (int i = 0; i < count; i++) {
         assert(recvbuf[i] == testbuf[i]);
-        // printf("node: %d, i = %d -> %f, %f, %f\n", rank, i, recvbuf[i], testbuf1[i], testbuf[i]); // for debugging
+        //printf("node: %d, i = %d -> %f, %f, %f\n", rank, i, recvbuf[i], testbuf1[i], testbuf[i]); // for debugging
     }
  
         // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
@@ -392,8 +404,8 @@ int main(int argc, char *argv[])
         
         start = MPI_Wtime();
         // start timing
-        MY_Reduce_T(sendbuf, testbuf1, c, size, rank, blockSize);
-        MY_Bcast_T(testbuf1, testbuf, c, size, rank, blockSize);
+        MY_Reduce_T(sendbuf, testbuf1, c, size, rank, get_blockSize(c));
+        MY_Bcast_T(testbuf1, testbuf, c, size, rank, get_blockSize(c));
         // end timing
         stop = MPI_Wtime();
         
@@ -431,11 +443,6 @@ int main(int argc, char *argv[])
         }
     }
   }
-
-    // start timing
-    // MY_Reduce_T(sendbuf, testbuf1, count, size, rank, blockSize);
-    // MY_Bcast_T(testbuf1, testbuf, count, size, rank, blockSize);
-    // end timing
  
     MPI_Finalize();
     free(sendbuf);

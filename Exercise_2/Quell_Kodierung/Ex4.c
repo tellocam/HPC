@@ -311,7 +311,7 @@ int main(int argc, char *argv[])
     count = 10;
     power = 2;
     gentxt = 0;
-    blockSize = 10;
+    blockSize = 100;
     hydra_nodes = 1;
 
     for (i=1; i<argc&&argv[i][0]=='-'; i++) {
@@ -345,10 +345,10 @@ int main(int argc, char *argv[])
             strcat(file_suffix, uline);
             strcat(file_suffix, PCHAR);
             strcat(file_suffix, pow_char);
-            strcat(file_suffix, uline);
-            strcat(file_suffix, BSCHAR);
-            strcat(file_suffix, bs_char);
-            sprintf(file_name, "EX2_%s.txt", file_suffix);  
+            //strcat(file_suffix, uline);
+            //strcat(file_suffix, BSCHAR);    // commentend out bcs blocksize is variable now!
+            //strcat(file_suffix, bs_char);
+            sprintf(file_name, "EX4_%s.txt", file_suffix);  
             // mpicc -o Ex4 Ex4.c -lm -O3
             // mpirun -np 8 ./Ex4 -c 50 -h 1 -p 2 -b 4 -g 1
             fp = fopen(file_name, "w");
@@ -393,61 +393,56 @@ int main(int argc, char *argv[])
         //printf("node: %d, i = %d -> %f, %f, %f\n", rank, i, recvbuf[i], testbuf1[i], testbuf[i]); // for debugging
     }
  
-//         // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
-//     for (c = 1; c <= count; c *= power)
-//     {
-//     if (c > count) break;
+        // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
+    for (c = 1; c <= count; c *= power)
+    {
+    if (c > count) break;
     
-//     for (r = 0, t = 0; r < WARMUP+REPEAT; r++) {
-//         MPI_Barrier(MPI_COMM_WORLD);
-//         MPI_Barrier(MPI_COMM_WORLD);
+    for (r = 0, t = 0; r < WARMUP+REPEAT; r++) {
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
         
-//         start = MPI_Wtime();
-//         // start timing
-//         MY_Reduce_T(sendbuf, testbuf1, c, size, rank, get_blockSize(c));
-//         MY_Bcast_T(testbuf1, testbuf, c, size, rank, get_blockSize(c));
-//         // end timing
-//         stop = MPI_Wtime();
+        start = MPI_Wtime();
+        // start timing
+        MY_Reduce_T(sendbuf, testbuf1, c, size, rank, get_blockSize(c));
+        MY_Bcast_T(testbuf1, testbuf, c, size, rank, get_blockSize(c));
+        // end timing
+        stop = MPI_Wtime();
         
-//         MPI_Barrier(MPI_COMM_WORLD);
-//         MPI_Barrier(MPI_COMM_WORLD);
-//         if (r < WARMUP) continue;
-//         runtime[t++] = stop-start;
-//     }
-//     MPI_Allreduce(MPI_IN_PLACE, runtime, t, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
+        if (r < WARMUP) continue;
+        runtime[t++] = stop-start;
+    }
+    MPI_Allreduce(MPI_IN_PLACE, runtime, t, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     
-//     // compute mean, minimum (slowest process)
-//     // compute median, CI, standard deviation
-//     if (rank==0) {
-//         tuwtype_t tuwavg, tuwmin;
-//         tuwtype_t tuwmed, tuwstddev, CI_MOR;
-//         tuwavg = 0.0; 
-//         tuwmin = runtime[0]; 
+    // compute mean, minimum (slowest process)
+    // compute median, CI, standard deviation
+    if (rank==0) {
+        tuwtype_t tuwavg, tuwmin;
+        tuwtype_t tuwmed, tuwstddev, CI_MOR;
+        tuwavg = 0.0; 
+        tuwmin = runtime[0]; 
 
-//         for (t = 0; t < REPEAT; t++) {
-//             tuwavg += runtime[t];
-//             if (runtime[t]<tuwmin) tuwmin = runtime[t];
-//         }
+        for (t = 0; t < REPEAT; t++) {
+            tuwavg += runtime[t];
+            if (runtime[t]<tuwmin) tuwmin = runtime[t];
+        }
 
-//         tuwavg /= REPEAT;
-//         tuwmed = find_median(runtime, (size_t)REPEAT);
-//         tuwstddev = find_stddev(runtime, (size_t)REPEAT, tuwavg);
-//         CI_MOR = find_CI_MOR(tuwstddev, (size_t)REPEAT);
+        tuwavg /= REPEAT;
+        tuwmed = find_median(runtime, (size_t)REPEAT);
+        tuwstddev = find_stddev(runtime, (size_t)REPEAT, tuwavg);
+        CI_MOR = find_CI_MOR(tuwstddev, (size_t)REPEAT);
 
-//         fprintf(stderr, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n", 
-//             c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
+        fprintf(stderr, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n", 
+            c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
 
-//         if (gentxt!=0){
-//         fprintf(fp, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n",
-//             c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
-//         }
-//     }
-//   }
-
-    // start timing
-    // MY_Reduce_T(sendbuf, testbuf1, count, size, rank, blockSize);
-    // MY_Bcast_T(testbuf1, testbuf, count, size, rank, blockSize);
-    // end timing
+        if (gentxt!=0){
+        fprintf(fp, "%d, %ld, %.2f, %.2f, %.2f, %.2f, %.2f \n",
+            c, c*sizeof(tuwtype_t), tuwavg*MICRO, tuwmin*MICRO, tuwmed*MICRO, tuwstddev*MICRO, CI_MOR*MICRO);
+        }
+    }
+  }
  
     MPI_Finalize();
     free(sendbuf);
