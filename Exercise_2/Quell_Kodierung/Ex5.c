@@ -26,6 +26,16 @@ char BSCHAR[16] = "B";
 #define TUW_TYPE MPI_DOUBLE
 typedef double tuwtype_t;
 
+int get_blockSize(int count){
+    if (count < 1e4){
+        return 1e2;
+    }
+    else if (count < 1e6){
+        return 1e3;
+    }
+    else return 1e6;
+}
+
 int get_parent(int id)
 {
     return floor((id-1)/2);
@@ -164,7 +174,7 @@ int main(int argc, char *argv[])
     count = 7;
     power = 2;
     gentxt = 0;
-    blockSize = 4;
+    blockSize = 100;
     hydra_nodes = 1;
 
     for (i=1; i<argc&&argv[i][0]=='-'; i++) {
@@ -233,7 +243,7 @@ int main(int argc, char *argv[])
     // "correctness test": compare against result from library function
     // MY_Reduce_T(sendbuf, testbuf, count, size, rank);
     // MY_Bcast_T(testbuf, testbuf, count, size, rank);
-    MY_Allreduce_T(sendbuf, testbuf, count, size, rank, blockSize);
+    MY_Allreduce_T(sendbuf, testbuf, count, size, rank, get_blockSize(count));
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
@@ -255,7 +265,7 @@ int main(int argc, char *argv[])
         
         start = MPI_Wtime();
         // start timing
-        MY_Allreduce_T(sendbuf, testbuf, c, size, rank, blockSize);
+        MY_Allreduce_T(sendbuf, testbuf, c, size, rank, get_blockSize(c));
         // end timing
         stop = MPI_Wtime();
         

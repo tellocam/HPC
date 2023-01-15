@@ -26,6 +26,16 @@ char BSCHAR[16] = "B";
 #define TUW_TYPE MPI_DOUBLE
 typedef double tuwtype_t;
 
+int get_blockSize(int count){
+    if (count < 1e4){
+        return 1e2;
+    }
+    else if (count < 1e6){
+        return 1e3;
+    }
+    else return 1e6;
+}
+
 int get_parent(int id)
 {
     return id-1;
@@ -58,7 +68,7 @@ int MY_Allreduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, 
     {
         if (node < size-1) // node != leaf
         {
-            sendSize = (j-d-1+1)*blockSize < count ? blockSize : (j-d-1)*blockSize < count ? count%blockSize : 0;
+            sendSize = (j-d-1+1)*blockSize <= count ? blockSize : (j-d-1)*blockSize < count ? count%blockSize : 0;
             sendSize = (j-(d+1)<0 || j-(d+1)>=b) ? 0 : sendSize;
             
             MPI_Sendrecv(workbuf + (j-(d+1))*blockSize, sendSize, MPI_DOUBLE, get_childL(node), j, tmpbuf, blockSize, MPI_DOUBLE, get_childL(node), j, MPI_COMM_WORLD, &status);
@@ -70,8 +80,9 @@ int MY_Allreduce_P(tuwtype_t *sendbuf, tuwtype_t *recvbuf, int count, int size, 
         }
         if (node != 0) // node != root
         {
-            sendSize = (j+1)*blockSize < count ? blockSize : j*blockSize < count ? count%blockSize : 0;
+            sendSize = (j+1)*blockSize <= count ? blockSize : j*blockSize < count ? count%blockSize : 0;
             sendSize = (j<0 || j>=b) ? 0 : sendSize;
+            // if(node == size-1) printf("sendSize = %d, node = %d, j = %d \n", sendSize, node, j);
             MPI_Sendrecv(workbuf + j*blockSize, sendSize, MPI_DOUBLE, get_parent(node), j, tmpbuf, blockSize, MPI_DOUBLE, get_parent(node), j, MPI_COMM_WORLD, &status);
             MPI_Get_count(&status, MPI_DOUBLE, &recvcount);
             if (j-d >= 0 && j-d < b && recvcount > 0)
@@ -139,7 +150,7 @@ int main(int argc, char *argv[])
     count = 10;
     power = 2;
     gentxt = 0;
-    blockSize = 4;
+    blockSize = 100;
     hydra_nodes = 1;
 
     for (i=1; i<argc&&argv[i][0]=='-'; i++) {
@@ -150,9 +161,12 @@ int main(int argc, char *argv[])
         if (argv[i][1]=='g') i++, sscanf(argv[i], "%d", &gentxt); // commandline arg. -g for generating a txt, if none given, no .txt
     }
 
+    // the blockSize argument -b is not needed anymore from this point on
+    // to prevent mistakes its gonna be kept in place also for Ex4 and Ex5..
+
     if(rank == 0){
         //printf("----- \n Number of processors must be of size 2^n-1. \n----- \n");
-        fprintf(stderr,"Results for Ex3 with %d Processes, on %d Nodes with Blocksize %d and powers of %d \n",size/hydra_nodes, hydra_nodes, blockSize, power); 
+        fprintf(stderr,"Results for Ex3 with %d Processes, on %d Nodes with variable blockSize and powers of %d \n",size/hydra_nodes, hydra_nodes, power); 
         fprintf(stderr,"count, m (Bytes), avg, min, median, stddev,  CIMOE \n");
     }
     // mpirun -np 8 ./Ex3 -c 50 -p 2 -b 4 -h 1 -g 1
@@ -209,7 +223,7 @@ int main(int argc, char *argv[])
         testbuf[i] = (tuwtype_t)-1;
 
     // "correctness test": compare against result from library function
-    MY_Allreduce_P(sendbuf, testbuf, count, size, rank, blockSize);
+    MY_Allreduce_P(sendbuf, testbuf, count, size, rank, get_blockSize(count)); // get_blockSize redundant but for completeness :)
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Allreduce(sendbuf, recvbuf, count, TUW_TYPE, MPI_MAX, MPI_COMM_WORLD);
@@ -218,7 +232,7 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < count; i++) {
         assert(recvbuf[i] == testbuf[i]);
-        // printf("rank: %d -> %f, %f\n", rank, recvbuf[i], testbuf[i]); // for debugging
+        //if(recvbuf[i] != testbuf[i]) printf("rank: %d -> %f, %f\n", rank, recvbuf[i], testbuf[i]); // for debugging
     }
  
     // TIME MEASURE FOR POWERS OF power , can be command line arg, otherwise its 2!
@@ -231,7 +245,7 @@ int main(int argc, char *argv[])
         MPI_Barrier(MPI_COMM_WORLD);
         
         start = MPI_Wtime();
-        MY_Allreduce_P(sendbuf, testbuf, c, size, rank, blockSize);
+        MY_Allreduce_P(sendbuf, testbuf, c, size, rank, get_blockSize(c));
         
         stop = MPI_Wtime();
         
