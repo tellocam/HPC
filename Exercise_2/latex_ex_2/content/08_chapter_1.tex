@@ -7,28 +7,38 @@ and all the demanded quantities where computed and gathered in \texttt{.txt} fil
  perform an operation on the gathered information, and distribute the result of the operation to all 
  participating processes. In our case we used the \texttt{MPI\_MAX} operation, which yields the largest 
  element of the buffers. In the following exercises, the same idea is persued (reduce, perform operation, 
- broadcast operation result) but with more sophisticated message passing approaches. 
+ broadcast operation result) but with more sophisticated message passing approaches. \\
 
+For the naive implementation \texttt{MY\_Allreduce()}, which is essentially \texttt{MPI\_Reduce()} followed 
+by \texttt{MPI\_Bcast()}, for powers of 10, we observed the timings shown in figure (\ref{Ex1_P10_median}).
+The configurations for each graph are shown in the legend, where N is the number of Hydra Nodes, T 
+the number of Processes per Node and P is e.g. powers of 10, whereby powers of 10 means that the length 
+of the buffers (Count) are all powers of 10. The measurements for 36 hydra nodes and 32 tasks per node (total of 1152 \MPI 
+Processes) were the slowest, while the measurement for 20 nodes and 1 task per node performed best.
 
 \begin{figure}[h]
     \begin{center}
         \includegraphics[width=1.0\linewidth]{figures/Ex1_1.pdf}
+
         \caption{Median Timings for \texttt{MPI\_Reduce + MPI\_Bcast} for all Configurations 
         and powers of 10. Since every \fun{MPI} process performs its own timing, we use 
-        \fun{MPI\_Reduce(..,MPI\_MAX)} to retrieve the timing of the slowest process. After 10 Warmup rounds in Ex1 we ran a 100
-        iterations to compute the statistic data asked for in Ex1.}
+        \fun{MPI\_Reduce(..,MPI\_MAX)} to retrieve the timing of the slowest process. After 10 Warmup rounds 
+        in Ex1 we ran a 100 iterations to compute the statistical data asked for in Ex1.}
+
         \label{Ex1_P10_median}
     \end{center}
 \end{figure}
 
-For the naive implementation \texttt{MY\_Allreduce()}, which is essentially \texttt{MPI\_Reduce()} followed 
-by \texttt{MPI\_Bcast()}, for powers of 10, we observed the timings shown in figure (\ref{Ex1_P10_median}).
-The configurations for each measurement are shown in the legend, where N stands for the number of Nodes, T 
-for the number of tasks per thread and P is e.g. powers of 10, whereby powers of 10 means that the length 
-of the buffers (Count) are all powers of 10.
+Similar behaviour of the measurements can be observed for the ones with power of 2, see figure (\ref{Ex1_P2_median}).
+Where the total highest number of \MPI processes again performed the worst and the one with 20 nodes and 1 task per 
+node did the best. Also visible are jumps in all measurements except two at count = 32, the two measurements where the
+jumps dont occur are the ones with only one task per node. This exact characteristics where also observed in the plot
+for powers of 10, just at count = 10
+
+
 \begin{figure}[h]
     \begin{center}
-        \includegraphics[width=0.8\linewidth]{figures/Ex1_2.pdf}
+        \includegraphics[width=1\linewidth]{figures/Ex1_2.pdf}
         \caption{Median Timings for \texttt{MPI\_Reduce + MPI\_Bcast} with all Configurations and powers of 2}
         \label{Ex1_P2_median}
     \end{center}
@@ -37,6 +47,8 @@ of the buffers (Count) are all powers of 10.
 \pagebreak
 
 \section{Exercise 2 - Implement Linear Pipeline for \texttt{MPI\_Bcast} and \texttt{MPI\_Reduce}}
+
+SLIDES ZITIERN, PAPER TRAEFF ZITIERN, REFERENZ ZU NER ANDEREN CHAPTER MACHEN
 
 The goal of exercise 2 is to implement linear pipelined versions of \texttt{MPI\_Bcast()} and \texttt{MPI\_Reduce()} 
 based on the algorithms discussed in the lecture (refer to Algorithm 16 and Algorithm 17 of "Algorithms for Collective 
@@ -74,6 +86,9 @@ of \texttt{MPI\_Allreduce()}.\\
 \pagebreak
 
 \section{Exercise 3 - Combining \texttt{MPI} Processes}
+
+PROPER ZITAT ZU AUFGABE 5
+
 With the goal of saving slightly on communication rounds by combining a pipelined reduction and a 
 pipelined broadcast more tightly to keep the processes “more busy”, we end up with the function implementation 
 of \texttt{MY\_Allreduce\_P()}. This implementation is completely based on the pipelined tree 
