@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
 
     if(rank == 0){
         //printf("----- \n Number of processors must be of size 2^n-1. \n----- \n");
-        fprintf(stderr,"Results for Ex2 with %d Processes, on %d Nodes with Blocksize %d and powers of %d \n",size/hydra_nodes, hydra_nodes, blockSize, power); 
+        fprintf(stderr,"Results for Ex4 with %d Processes, on %d Nodes with Blocksize %d and powers of %d \n",size/hydra_nodes, hydra_nodes, blockSize, power); 
         fprintf(stderr,"count, m (Bytes), avg, min, median, stddev,  CIMOE \n");
     }
     // mpirun -np 8 ./Ex4 -c 50 -p 2 -b 4 -h 1 -g 1
