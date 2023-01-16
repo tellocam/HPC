@@ -1,2 +1,25 @@
-\section{Chapter 4}
+\section{Exercise 4 - Binary Tree Algorithms for \texttt{MPI\_Bcast} and \texttt{MPI\_Reduce}}
+Instead of “lined up” processes we now want to use a binary tree structure and according algorithms 
+\texttt{MY\_Reduce\_T()} and \texttt{MY\_Bcast\_T()} for reduction and broadcasting. As we understand 
+each process as a node, we will use the wording node from now on. For indexing of the nodes, we use preorder traversal.
 
+We start very similar to the implementations of \texttt{MY\_Reduce\_P()} and \texttt{MY\_Bcast\_P()} 
+from exercise 2. For the reduction \texttt{MY\_Reduce\_P()}  the root node (rank $=0$) on level 0 should 
+gain the reduced result. Hence, the leaves start by sending the data block by block to their parents. All 
+interior nodes receive exactly two data blocks per communication round. One from their left and one from their 
+right child. After performing a local reduction, the data is sent to the nodes parent. In the end, the root 
+node receives the data from its two children and ends up with the reduction result. For the broadcast 
+\texttt{MY\_Bcast\_P()}, the root node sends the data block wise to its two children. A child receives 
+the data and immediately forwards this data to its children, in case it is not a leaf.\\
+
+The trivial combination of \texttt{MY\_Reduce\_T()} and \texttt{MY\_Bcast\_T()} can be seen 
+as a pipelined variant of \texttt{MPI\_Allreduce()}.\\
+
+\begin{figure}[h]
+    \begin{center}
+        \includegraphics[width= 0.88\linewidth]{figures/Ex1_2.pdf} 
+        \label{ref_plot_task_5}
+        \caption{Benchmark both algorithms - \texttt{yarg32()} is faster than \texttt{yarg()} for all feasible values of $d$}
+    \end{center}
+\end{figure}
+\pagebreak

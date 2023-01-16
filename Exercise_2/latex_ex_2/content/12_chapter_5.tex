@@ -1,2 +1,16 @@
-\section{Chapter 5}
+\section{Exercise 5 - Integrated, Improved Binary Tree Algorithm}
+
+PROPER ZITAT VON TRAEFF 
+
+We aim to devise an integrated, improved binary tree algorithm for \texttt{MPI\_Allreduce()}. Our 
+implementation \texttt{MY\_Allreduce\_T()} is based on the algorithm for a doubly pipelined binary 
+tree described in [Jesper Larsson Träff. A doubly-pipelined, dual-root reduction-to-all algorithm and 
+implementation. arXiv:2109.12626, 2021.]. Note that we use only one tree, so there will never happen any 
+communication between roots of different trees, as there is no. Per communication round, the reduction of 
+one block can be performed. Hence, for complete reduction as much communication rounds are needed, 
+as there are blocks. The idea is, that the root node starts with its broadcast-like send operations 
+as soon as it received the data of the first block. The root node performs a local reduction against 
+its own value and then the broadcasting starts while other blocks are still (or not yet) 
+in their reduction phase. \\
+
 

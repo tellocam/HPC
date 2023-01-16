@@ -1,49 +1,90 @@
-\section{Exercise 4 - Binary Tree Algorithms for \texttt{MPI\_Bcast} and \texttt{MPI\_Reduce}}
-Instead of “lined up” processes we now want to use a binary tree structure and according algorithms 
-\texttt{MY\_Reduce\_T()} and \texttt{MY\_Bcast\_T()} for reduction and broadcasting. As we understand 
-each process as a node, we will use the wording node from now on. For indexing of the nodes, we use preorder traversal.
+\section{Exercise 2 - Implement Linear Pipeline for \texttt{MPI\_Bcast} and \texttt{MPI\_Reduce}}
 
-We start very similar to the implementations of \texttt{MY\_Reduce\_P()} and \texttt{MY\_Bcast\_P()} 
-from exercise 2. For the reduction \texttt{MY\_Reduce\_P()}  the root node (rank $=0$) on level 0 should 
-gain the reduced result. Hence, the leaves start by sending the data block by block to their parents. All 
-interior nodes receive exactly two data blocks per communication round. One from their left and one from their 
-right child. After performing a local reduction, the data is sent to the nodes parent. In the end, the root 
-node receives the data from its two children and ends up with the reduction result. For the broadcast 
-\texttt{MY\_Bcast\_P()}, the root node sends the data block wise to its two children. A child receives 
-the data and immediately forwards this data to its children, in case it is not a leaf.\\
+SLIDES ZITIERN, PAPER TRAEFF ZITIERN, REFERENZ ZU NER ANDEREN CHAPTER MACHEN
 
-The trivial combination of \texttt{MY\_Reduce\_T()} and \texttt{MY\_Bcast\_T()} can be seen 
-as a pipelined variant of \texttt{MPI\_Allreduce()}.\\
+The goal of exercise 2 is to implement linear pipelined versions of \texttt{MPI\_Bcast()} and \texttt{MPI\_Reduce()} 
+based on the algorithms discussed in the lecture (refer to Algorithm 16 and Algorithm 17 of "Algorithms for Collective 
+Communication"). \\
+
+Our implementation for the pipelined reduction -- \texttt{MY\_Reduce\_P()} – aligns with the following idea: We 
+distinct between a master process (rank $= 0$), interior processes ($0 <$ rand $<$ size $-1$) and an end process 
+(rank $=$ size $-1$). As an output of \texttt{MY\_Reduce\_P()}, the master shall possess the entry-wise maximum as 
+reduction result. Additionally, we divide the array that needs to be compared into multiple blocks of size 
+\texttt{blockSize} (and probably a smaller block in the end). Goal is to communicate between the processes for each 
+block separately. \\
+
+The end process (rank $=$ size $-1$) sends blocks – one after the other -- to the interior process with 
+rank $=$ size $-2$. The end process does not receive data, as there are no further processes. Interior processes 
+first receive a data block from their neighbor with rank $+1$, perform a local reduction and send this data to their 
+other neighbor with rank $-1$. This is repeated for all blocks. The master process receives block data from the interior 
+node of rank $=1$.\\
+
+Our implementation for the pipelined broadcast -- \texttt{MY\_Bcast\_P()} – is quite similar to the 
+\texttt{MY\_Reduce\_P()} implementation. For broadcast the goal is that the data which is I the beginning 
+available for the master process shall be communicated to all the other processes. In order to do so, the master 
+process sends its data block wise to its neighbor with rank $=1$ (interior process). Interior processes receive block 
+data from their predecessor process and immediately communicate this data to their successor process – block by 
+block. The last one to receive the data is the end processor. There is no need to send any further data from here.\\
+
+The trivial combination of \texttt{MY\_Reduce\_P()} and \texttt{MY\_Bcast\_P()} can be seen as a pipelined variant 
+of \texttt{MPI\_Allreduce()}.\\
 
 \begin{figure}[h]
-    \begin{center}
-        \includegraphics[width= 0.88\linewidth]{figures/Ex1_2.pdf} 
-        \label{ref_plot_task_5}
-        \caption{Benchmark both algorithms - \texttt{yarg32()} is faster than \texttt{yarg()} for all feasible values of $d$}
-    \end{center}
+\begin{center}
+    \includegraphics[width=1.0\linewidth]{figures/Ex2_1.pdf}
+    \caption{Caption for Ex2 plot 1}
+    \label{Ex2_1_p}
+\end{center}
 \end{figure}
-\pagebreak
 
-\section{Exercise 5 - Integrated, Improved Binary Tree Algorithm}
+\begin{figure}[h]
+\begin{center}
+    \includegraphics[width=1.0\linewidth]{figures/Ex2_2.pdf}
+    \caption{Caption for Ex2 plot 2}
+    \label{Ex2_2_p}
+\end{center}
+\end{figure}
 
-PROPER ZITAT VON TRAEFF 
+\begin{figure}[h]
+\begin{center}
+    \includegraphics[width=1.0\linewidth]{figures/Ex2_3.pdf}
+    \caption{Caption for Ex2 plot 3}
+    \label{Ex2_3_p}
+\end{center}
+\end{figure}
 
-We aim to devise an integrated, improved binary tree algorithm for \texttt{MPI\_Allreduce()}. Our 
-implementation \texttt{MY\_Allreduce\_T()} is based on the algorithm for a doubly pipelined binary 
-tree described in [Jesper Larsson Träff. A doubly-pipelined, dual-root reduction-to-all algorithm and 
-implementation. arXiv:2109.12626, 2021.]. Note that we use only one tree, so there will never happen any 
-communication between roots of different trees, as there is no. Per communication round, the reduction of 
-one block can be performed. Hence, for complete reduction as much communication rounds are needed, 
-as there are blocks. The idea is, that the root node starts with its broadcast-like send operations 
-as soon as it received the data of the first block. The root node performs a local reduction against 
-its own value and then the broadcasting starts while other blocks are still (or not yet) 
-in their reduction phase. \\
+%% 2_4 and 2_5 plots next to each other!
+
+\begin{figure}[h]
+\centering
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=1.0\linewidth]{figures/Ex2_4.pdf}
+        \captionof{figure}{Caption for Ex2 plot 4}
+        \label{Ex2_4_p}
+    \end{minipage}%
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=1.0\linewidth]{figures/Ex2_5.pdf}
+        \captionof{figure}{Caption for Ex2 plot 5}
+        \label{Ex2_5_p}
+    \end{minipage}
+\end{figure}
+
+% \begin{figure}[h]
+%     \begin{center}
+%         \includegraphics[width=1.0\linewidth]{figures/Ex2_4.pdf}
+%         \caption{Caption for Ex2 plot 4}
+%         \label{Ex2_4_p}
+%     \end{center}
+% \end{figure}
+
+% \begin{figure}[h]
+%     \begin{center}
+%         \includegraphics[width=1.0\linewidth]{figures/Ex2_5.pdf}
+%         \caption{Caption for Ex2 plot 5}
+%         \label{Ex2_5_p}
+%     \end{center}
+% \end{figure}
 
 
-\pagebreak
-\section{Exercise 6 - Improvement with Sibling Leave Communication (BONUS)}
-Not implemented.
-
-\section{Exercise 7 - Implemenetation and Benchmarking of Improved Version (BONUS)}
-Not implemented.
-\pagebreak
