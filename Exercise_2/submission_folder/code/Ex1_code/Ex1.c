@@ -33,7 +33,7 @@ char file_suffix[64];
 char node_char[16];
 char sizepn_char[16];
 char pow_char[16];
-char bs_char[16]
+char bs_char[16];
 char uline[16] = "_";
 char NCHAR[16] = "N";
 char TCHAR[16] = "T";

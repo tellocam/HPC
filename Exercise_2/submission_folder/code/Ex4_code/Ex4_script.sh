@@ -1,4 +1,4 @@
-mc=10000000 # max. Count
+mc=10000 # max. Count
 txtgen=1 # if set to 1 -> generates .txt, if set to 0 -> does NOT generate .txt
 
 cs="--cpu-freq=High"
