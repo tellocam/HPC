@@ -20,6 +20,12 @@ whereas \texttt{MY\_Reduce\_P()} and \texttt{MY\_Bcast\_P()} use $\text{number o
 each. For a small numbers of processes/nodes, the number of communication rounds can be reduced based 
 on the number of blocks and therefore the blocksize.\\
 
+For performance estimation let us consider the number of communication rounds between processes in our
+pipelined \texttt{MY\_Allreduce\_P()}. Again let $b$ be the total number of blocks and $n$ the 
+number of processes. Then, there is the need for a total of $b+n-1$ rounds of communication. 
+As we assume $n$ to be smaller than the numbers of blocks, we end up with less communication rounds
+copmared to \texttt{MY\_Reduce\_P()} and \texttt{MY\_Bcast\_P()} from exercise 2.\\
+
 \begin{figure}[h]
     \begin{center}
         \includegraphics[width=1.0\linewidth]{figures/Ex3_1.pdf}

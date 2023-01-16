@@ -13,6 +13,13 @@ as soon as it received the data of the first block. The root node performs a loc
 its own value and then the broadcasting starts while other blocks are still (or not yet) 
 in their reduction phase. \\
 
+For performance estimation let us consider the number of communication rounds one last time. As before, let 
+$b$ be the total number of blocks and (different to before) $n$ the number of processes. Then, there is 
+the need for a total of $b+\lfloor \log_2(n)\rfloor$ rounds of communication. The number $\lfloor \log_2(n)\rfloor$
+can be understood as the maximum level of our binary tree. As we assume $n$ to be smaller than the numbers
+of blocks, we end up with less communication rounds copmared to \texttt{MY\_Reduce\_T()} and \texttt{MY\_Bcast\_T()}
+ from exercise 4.\\
+
 \begin{figure}[h]
     \begin{center}
         \includegraphics[width=1.0\linewidth]{figures/Ex5_3.pdf}

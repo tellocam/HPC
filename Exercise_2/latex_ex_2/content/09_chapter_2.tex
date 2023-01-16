@@ -19,6 +19,9 @@ first receive a data block from their neighbor with rank $+1$, perform a local r
 other neighbor with rank $-1$. This is repeated for all blocks. The master process receives block data from the interior 
 node of rank $=1$.\\
 
+For performance estimation of \texttt{MY\_Reduce\_P()}, we take a look on the number of communication rounds. Let $b$ 
+be the total number of blocks. Then, there will be a need of $b$ communication rounds in \texttt{MY\_Reduce\_P()}. \\
+
 Our implementation for the pipelined broadcast -- \texttt{MY\_Bcast\_P()} – is quite similar to the 
 \texttt{MY\_Reduce\_P()} implementation. For broadcast the goal is that the data which is I the beginning 
 available for the master process shall be communicated to all the other processes. In order to do so, the master 
@@ -26,8 +29,12 @@ process sends its data block wise to its neighbor with rank $=1$ (interior proce
 data from their predecessor process and immediately communicate this data to their successor process – block by 
 block. The last one to receive the data is the end processor. There is no need to send any further data from here.\\
 
+Very similar as for \texttt{MY\_Reduce\_P()} we can see from the implementation, that for \texttt{MY\_Bcast\_P()} 
+there are $b$ rounds of comminication needed as well.\\
+
 The trivial combination of \texttt{MY\_Reduce\_P()} and \texttt{MY\_Bcast\_P()} can be seen as a pipelined variant 
-of \texttt{MPI\_Allreduce()}.\\
+of \texttt{MPI\_Allreduce()}. We end up with a total of $2b$ communciation rounds for this realisation of 
+\texttt{MPI\_Allreduce}.\\
 
 \begin{figure}[h]
     \begin{center}

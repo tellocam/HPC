@@ -1,4 +1,5 @@
 \section{Exercise 4 - Binary Tree Algorithms for \texttt{MPI\_Bcast} and \texttt{MPI\_Reduce}}
+
 Instead of “lined up” processes we now want to use a binary tree structure and according algorithms 
 \texttt{MY\_Reduce\_T()} and \texttt{MY\_Bcast\_T()} for reduction and broadcasting. As we understand 
 each process as a node, we will use the wording node from now on. For indexing of the nodes, we use preorder traversal.
@@ -14,6 +15,12 @@ the data and immediately forwards this data to its children, in case it is not a
 
 The trivial combination of \texttt{MY\_Reduce\_T()} and \texttt{MY\_Bcast\_T()} can be seen 
 as a pipelined variant of \texttt{MPI\_Allreduce()}.\\
+
+For performance estimation -- again -- let us consider the number of communication rounds between processes in the 
+just discussed implementatations of \texttt{MY\_Reduce\_T()} and \texttt{MY\_Bcast\_T()}. Again let $b$ 
+be the total number of blocks, then there is the need for $b$ MPI communication rounds per function call. 
+Therfore, we end up with a total of $2b$ rounds of communication for the combination of \texttt{MY\_Reduce\_T()} and 
+\texttt{MY\_Bcast\_T()}.\\
 
 \begin{figure}[h]
     \begin{center}
