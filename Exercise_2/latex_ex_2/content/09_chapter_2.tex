@@ -42,10 +42,21 @@ Very similar as for \texttt{MY\_Reduce\_P()} we can see from the implementation,
 there $b+n-2$ rounds of communication needed as well. \\
 
 The trivial combination of \texttt{MY\_Reduce\_P()} and \texttt{MY\_Bcast\_P()} can be seen as a pipelined variant 
-of \texttt{MPI\_Allreduce()}. In figure \ref{Ex2_sketch_p} the green arrows indicate the communication steps for 
-\texttt{MY\_Reduce\_P()} and the blue arrows \texttt{MY\_Bcast\_P()}. Only once all reduction communications
-are finished (green arrows), the broadcasting (blue) starts. We end up with a total of $2\cdot(b+n-1)$ communciation 
-rounds for this realisation of \texttt{MPI\_Allreduce}. \\ 
+of \texttt{MPI\_Allreduce()}. In figure \ref{Ex2_sketch_p} the green arrows indicate communication steps for 
+\texttt{MY\_Reduce\_P()} and the blue arrows \texttt{MY\_Bcast\_P()}. Once all reduction communications
+are finished (green arrows), the broadcasting (blue) starts. We end up with of $2\cdot(b+n-1)$ communciation 
+rounds for \texttt{MPI\_Allreduce}.
+
+\pagebreak
+
+\subsection*{Commutativity}
+
+We know that \fun{MPI\_Reduce()} will start reduction from the last process and we 
+also know that the function can handle non-commutative reduction operations.
+In the all exercises we try to rebuild \fun{MPI\_Reduce()} and our implementation \fun{MY\_Reduce\_P()}
+performs the reduction operations in the exact same order as \fun{MPI\_Reduce()}. Hence the property of handling
+non-commutative operations is inherited from \fun{MPI\_Reduce()} to \fun{MY\_Reduce\_P()}.
+
 
 \pagebreak
 In figures \ref{Ex2_1_p} and \ref{Ex2_2_p} below, it can be observed, that the linearly pipelined algorithm outperforms
